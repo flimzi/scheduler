@@ -1,25 +1,10 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import sql from 'mssql'
-import { poolPromise } from '../config/db.js'
+import { sql } from '../config/db.js'
+import { users } from '../config/schema.js'
 import authenticateToken from '../middleware/auth.js'
 const router = express.Router()
-
-sql.Request.prototype.add = function(parameter) {
-    const p = '@' + Object.keys({ parameter })[0]
-    this.input(p, parameter)
-
-    return p
-}
-
-sql.Request.prototype.inputQuery = function(query) {
-    return this.query(query(this))
-}
-
-sql.Request.prototype.insert = function(table, ...values) {
-    return this.inputQuery(r => `INSERT INTO ${table} (${Object.keys(values).join()}) VALUES (${values.map(this.add).join()})`)
-}
 
 router.post('/register', async (req, res) => {
     const { email, password, role } = req.body
@@ -33,9 +18,8 @@ router.post('/register', async (req, res) => {
     //     .query("INSERT INTO users (email, password, role) VALUES (@email, @password, @role)")
 
     // await (await poolPromise).request().inputQuery(r => `INSERT INTO users (email, password, role) VALUES (${r.add(email)}, ${r.add(password)}, ${r.add(role)})`)
-    await (await poolPromise).request().insert('users', email, await bcrypt.hash(password, 10), role)
-
-    // i dont think theres need to send anything here because logging in is better
+    // await (await poolPromise).request().insert('users', email, await bcrypt.hash(password, 10), role)
+    await sql`INSERT INTO ${users} (${users.email}, ${users.password}, ${users.role}) VALUES (${email}, ${await bcrypt.hash(password, 10)}, ${role})`
     res.status(201).send()
 })
 
