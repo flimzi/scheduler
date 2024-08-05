@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken'
 
-const authenticateToken = (req, res, next) => {
+export const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
     if (token == null)
-        return req.sendStatus(401)
+        return res.sendStatus(401)
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err)
@@ -16,4 +16,11 @@ const authenticateToken = (req, res, next) => {
     })
 }
 
-export default authenticateToken
+export const authorize = role => (req, res, next) => {
+    authenticate(req, res, () => {
+        if (req.user?.role !== role)
+            return res.sendStatus(403)
+    
+        next()
+    })
+}
