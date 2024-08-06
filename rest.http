@@ -3,8 +3,7 @@ Content-Type: application/json
 
 {
     "email": "rest@test.com",
-    "password": "abcdef",
-    "role": 1
+    "password": "abcdef"
 }
 
 ###
@@ -21,3 +20,9 @@ Content-Type: application/json
     "email": "rest@test.com",
     "password": "abcdef"
 }
+
+###
+
+GET http://localhost:3000/api/auth/qr?id=1
+
+###

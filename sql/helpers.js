@@ -34,3 +34,11 @@ export async function sql(strings, ...values) {
     const query = strings.reduce((result, string, i) => result + string + getParam(values[i]), ' ')
     return request.query(query)
 }
+
+export async function sqlFirst(strings, ...values) {
+    return (await sql(strings, ...values)).recordset[0]
+}
+
+export async function sqlExists(strings, ...values) {
+    return await sqlFirst(strings, ...values) !== undefined
+}

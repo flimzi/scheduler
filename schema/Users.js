@@ -1,8 +1,8 @@
-import { sql } from '../sql/helpers.js'
+import { sql, sqlFirst } from '../sql/helpers.js'
 import bcrypt from 'bcryptjs'
 import DbObject from './DbObject.js'
+import Roles from './Roles.js'
 
-// probably should operate on user objects but whatever
 class Users extends DbObject {
     constructor() {
         super('users')
@@ -10,31 +10,62 @@ class Users extends DbObject {
 
     id = new DbObject('id')
     role = new DbObject('role')
-    email = new DbObject('email')
-    password = new DbObject('password')
-    
-    users_full = new DbObject('users_full')
+    createdAt = new DbObject('created_at')
 
-    // async exist(email) {
-    //     return (await sql`SELECT 1 FROM ${this} WHERE ${this.email} = ${email}`).recordset.length > 0
-    // }
+    userCredentials = new UserCredentials()
+    userDetails = new UserDetails()
+    usersFull = new DbObject('users_full')
 
-    async add(email, password, role) {
-        return sql`INSERT INTO ${this} (${this.email}, ${this.password}, ${this.role}) VALUES (${email}, ${await bcrypt.hash(password, 10)}, ${role})`
+    add(role) {
+        return sqlFirst`INSERT INTO ${this} (${this.role}) VALUES (${role}); SELECT SCOPE_IDENTITY() AS id`.then(r => r.id)
     }
 
-    async get(email, full) {
-        return (await sql`SELECT * FROM ${full ? this.users_full : this} WHERE ${this.email} = ${email}`).recordset[0]
+    get(id) {
+        return sqlFirst`SELECT * FROM ${this.usersFull} WHERE ${this.id} = ${id}`
     }
 
-    async exist(email) {
-        return (await this.get(email)) !== undefined
+    getByEmail(email) {
+        return sqlFirst`SELECT * FROM ${this.usersFull} WHERE ${this.userCredentials.email} = ${email}`
     }
 
-    getInfo(email) {
-        return this.get(email, true)
+    async emailExists(email) {
+        return await this.getByEmail(email) !== undefined
     }
 }
 
-const users = new Users()
-export default users
+class Carers extends Users {
+    async add(email, password) {
+        return this.userCredentials.add(await super.add(Roles.Carer), email, password)
+    }
+}
+
+class Patients extends Users {
+
+}
+
+class UserCredentials extends DbObject {
+    constructor() {
+        super('user_credentials')
+    }
+
+    email = new DbObject('email')
+    userId = new DbObject('user_id')
+    password = new DbObject('password')
+
+    async add(userId, email, password) {
+        return sql`INSERT INTO ${this} (${this.userId}, ${this.email}, ${this.password}) VALUES (${userId}, ${email}, ${await bcrypt.hash(password, 10)})`
+    }
+}
+
+class UserDetails extends DbObject {
+    constructor() {
+        super('user_details')
+    }
+
+    firstName = new DbObject('first_name')
+    lastName = new DbObject('last_name')
+}
+
+export const users = new Users()
+export const carers = new Carers()
+export const patients = new Patients()

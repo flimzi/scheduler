@@ -2,8 +2,8 @@ import 'dotenv/config';
 import express from 'express'
 import authRoutes from './routes/auth.js'
 import { sql } from './sql/helpers.js'
-import { users } from './config/schema.js'
-import { authenticate } from './middleware/auth.js';
+import { users } from './schema/Users.js'
+import { authorize } from './middleware/auth.js';
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -18,6 +18,11 @@ app.get('/', (req, res) => {
 
 app.get('/protected', authorize(3), (req, res) => {
     res.send(req.user.email)
+})
+
+app.use((err, req, res) => {
+    console.error(err)
+    res.sendStatus(500)
 })
 
 app.listen(port, async () => {
