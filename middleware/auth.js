@@ -17,9 +17,6 @@ export const authenticate = (req, res, next) => {
         if (req.user?.access_token !== token)
             return res.sendStatus(403)
 
-        if (!req.user.verified)
-            return res.sendStatus(401) // this would be a case of an ambiguous error so might need to abstract the codes
-
         next()
     })
 }

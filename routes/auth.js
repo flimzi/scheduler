@@ -5,22 +5,21 @@ import { sql } from '../sql/helpers.js'
 import users, { User, Roles } from '../schema/Users.js'
 import { authenticate, authorize } from '../middleware/auth.js'
 import QRCode from 'qrcode'
-import asyncHandler from './asyncHandler.js'
+import { isValidEmail, asyncHandler, isStrongPassword } from '../helpers.js'
 const router = express.Router()
 
 // put routes in object maybe
 router.post('/register', async (req, res) => {
     const user = req.body.as(User)
 
-    // here i guess what should remain is the validation logic but i wouldnt really send any messages because the front end needs to validate form input as well
-    if (!user.email || !user.password)
+    if (!isValidEmail(user.email) || !isStrongPassword(user.password))
         return res.sendStatus(400)
 
     if (await users.emailExists(user.email))
         return res.sendStatus(409)
     
-    await user.registerCarer()
-    return res.sendStatus(201)
+    await this.sendVerificationEmail()
+    return res.send()
 })
 
 router.post('/login', async (req, res) => {
@@ -29,6 +28,9 @@ router.post('/login', async (req, res) => {
 
     if (user === undefined)
         return res.sendStatus(400)
+
+    if (!user.verified)
+        return res.sendStatus(401)
 
     if (!await bcrypt.compare(password, user.password))
         return res.sendStatus(401)

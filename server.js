@@ -15,13 +15,12 @@ app.use('/api/auth', authRoutes)
 // put general routes in separate router like authRoutes
 app.get('/', async (req, res) => {
     const mailOptions = {
-        to: '420skun@gmail.com',
+        to: 'ffgil',
         subject: 'Wyjebało w kosmos słonia',
         html: '<p>email wysłany za pośrednictwem aplikacji Zwardon</p>'
     }
 
     const response = await transporter.sendMail(mailOptions)
-
     res.send()
 })
 

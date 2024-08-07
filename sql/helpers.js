@@ -22,14 +22,6 @@ mssql.Request.prototype.insert = function(table, obj, identity) {
     return this.query(query)
 }
 
-Object.prototype.as = function(type) {
-    return new type(this)
-}
-
-Object.prototype.asAsync = async function(type) {
-    return this.then(result => result.as(type))
-}
-
 // check what object type is IResult if any and add ?.as to cast to a model type 
 
 // this needs to be tested for sure

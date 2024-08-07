@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import transporter from '../config/mail.js'
+import { sanitizeLetters } from '../helpers.js'
 
 class Users extends DbObject {
     constructor() {
@@ -53,12 +54,17 @@ export class User {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, access_token, verification_token, verified }) {
         this.id = id
         this.role = role
-        this.created_at = created_at
+        this.created_at = created_at // not sure about the type of this we are probably going to cast this in weird ways
         this.email = email
         this.first_name = first_name
         this.access_token = access_token // not sure if this maybe shouldnt be a getter
         this.verification_token = verification_token // not sure if this maybe shouldnt be a getter
         this.verified = verified
+        this.password = password
+        this.last_name = last_name
+        this.gender = gender
+        this.birth_date = birth_date
+        this.phone_number = phone_number
     }
 
     async generateAccessToken() {
@@ -66,15 +72,20 @@ export class User {
         const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
 
         await sql`UPDATE TABLE ${users} SET ${users.access_token} = ${token} WHERE ${users.id} = ${this.id}`
-        return token
+        return this.access_token = token
     }
 
     // i guess we should somehow check if the address is invalid because rn every error from this is potentially a 500 so not a lot of information
+    // this is also going to be a challenge because we need to at least set up a possibility of having resource strings for this
+    // also i need 
     sendVerificationEmail() {
+        if (this.verified)
+            return
+
         const mailOptions = {
             to: this.email,
             subject: 'Verify your Zwardon account',
-            html: `<p>Please verify your email by clicking on the following link: <a href="http://localhost:3000/verify?token=${this.verification_token}">Verify Email</a></p>`
+            html: `<p>Please verify your email by clicking on the following link: <a href="${process.env.WEBSITE}/verify?token=${this.verification_token}">Verify Email</a></p>`
         }
 
         return transporter.sendMail(mailOptions)
@@ -85,29 +96,27 @@ export class User {
             return false
 
         await sql`UPDATE TABLE ${users} SET ${users.verified} = 1 WHERE ${users.id} = ${this.id}`
-        return true
+        return this.verified = true
     }
 
     logout() {
+        delete this.access_token
         return sql`UPDATE TABLE ${users} SET ${users.access_token} = NULL WHERE ${users.id} = ${this.id}`
     }
 
-    async registerCarer(debug) {
-        this.id = undefined
+    async registerCarer() {
+        sanitizeLetters(this.first_name, this.last_name)
+        delete this.id
+        delete this.access_token
+        // delete this.verified // probably going to use this
         this.role = Roles.Carer
-        this.verified = debug === true
         this.verification_token = crypto.randomBytes(20).toString('hex')
         this.password = await bcrypt.hash(this.password, 10)
-        this.access_token = undefined
 
         this.id = await sqlInsert(users, this, true)
         await this.sendVerificationEmail()
 
         return this.id
-    }
-
-    async emailExists() {
-        
     }
 }
 

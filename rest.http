@@ -2,8 +2,10 @@ POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
-    "email": "rest@test.com",
-    "password": "abcdef"
+    "email": "420skun@gmail.com",
+    "password": "HYui92",
+    "first_name": "abcnoń          ",
+    "last_name": "           ś€€ó 88883"
 }
 
 ###
