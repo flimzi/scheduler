@@ -1,40 +1,56 @@
+CREATE TABLE [users] (
+	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
+	[role] int NOT NULL,
+	[created_at] datetime NOT NULL DEFAULT GETDATE(),
+	[email] nvarchar(450) UNIQUE,
+	[password] nvarchar(max),
+	[first_name] nvarchar(max),
+	[last_name] nvarchar(max),
+	[gender] int NOT NULL DEFAULT 0,
+	[birth_date] datetime,
+	[phone_number] nvarchar(max),
+	[height_cm] int,
+	[weight_kg] int,
+	[access_token] nvarchar(max),
+	[verification_token] nvarchar(max),
+	[verified] bit NOT NULL DEFAULT 0,
+	PRIMARY KEY ([id])
+);
+
+CREATE TABLE [relationships] (
+	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
+	[carer_id] int NOT NULL,
+	[patient_id] int NOT NULL,
+	[type] int NOT NULL,
+	PRIMARY KEY ([id])
+);
+
 CREATE TABLE [events] (
 	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
 	[type] int NOT NULL,
 	[status] int NOT NULL,
-	[giver] int NOT NULL,
-	[receiver] int NOT NULL,
+	[giver_id] int NOT NULL,
+	[receiver_id] int NOT NULL,
 	[info] nvarchar(max),
-	[modified] datetime NOT NULL DEFAULT GETDATE(),
-	[start] datetime NOT NULL,
+	[modified_at] datetime NOT NULL DEFAULT GETDATE(),
+	[start_date] datetime NOT NULL,
 	[duration_seconds] int,
 	[interval_seconds] int,
 	PRIMARY KEY ([id])
 );
 
-CREATE TABLE [users] (
-	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
-	[role] int NOT NULL,
-	[email] nvarchar(450) NOT NULL UNIQUE,
-	[password] nvarchar(max) NOT NULL,
-	PRIMARY KEY ([id])
-);
+ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([carer_id]) REFERENCES [users]([id]);
 
-CREATE TABLE [user_details] (
-	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
-	[first_name] nvarchar(max),
-	[last_name] nvarchar(max),
-	[birth] datetime,
-	PRIMARY KEY ([id])
-);
+ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk2] FOREIGN KEY ([patient_id]) REFERENCES [users]([id]);
+ALTER TABLE [events] ADD CONSTRAINT [events_fk3] FOREIGN KEY ([giver_id]) REFERENCES [users]([id]);
 
-ALTER TABLE [events] ADD CONSTRAINT [events_fk3] FOREIGN KEY ([giver]) REFERENCES [users]([id]);
+ALTER TABLE [events] ADD CONSTRAINT [events_fk4] FOREIGN KEY ([receiver_id]) REFERENCES [users]([id]);
 
-ALTER TABLE [events] ADD CONSTRAINT [events_fk4] FOREIGN KEY ([receiver]) REFERENCES [users]([id]);
+CREATE INDEX [idx_users_role] ON [users] ([role])
+CREATE INDEX [idx_users_email] ON [users] ([email])
 
-ALTER TABLE [user_details] ADD CONSTRAINT [user_details_fk0] FOREIGN KEY ([id]) REFERENCES [users]([id]);
+CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
+CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
 
-CREATE INDEX idx_events_giver ON events (giver)
-CREATE INDEX idx_events_receiver ON events (receiver)
-
-CREATE INDEX idx_users_email ON users (email)
+CREATE INDEX [idx_relationships_carer_id] ON [relationships] ([carer_id])
+CREATE INDEX [idx_relationships_patient_id] ON [relationships] ([patient_id])

@@ -11,12 +11,28 @@ mssql.Request.prototype.inputQuery = function(query) {
     return this.query(query(this))
 }
 
-mssql.Request.prototype.insert = function(table, obj) {
+mssql.Request.prototype.insert = function(table, obj, identity) {
     const keys = Object.keys(obj)
     const values = keys.map(key => this.addParam(key, values[key]))
-    return this.inputQuery(r => `INSERT INTO ${table} (${keys.join()}) VALUES (${values.join()})`)
+    const query = `INSERT INTO ${table} (${keys.join()}) VALUES (${values.join()});`
+
+    if (identity)
+        return this.query(query + 'SELECT SCOPE_IDENTITY AS id').then(r => r.recordset[0].id)
+
+    return this.query(query)
 }
 
+Object.prototype.as = function(type) {
+    return new type(this)
+}
+
+Object.prototype.asAsync = async function(type) {
+    return this.then(result => result.as(type))
+}
+
+// check what object type is IResult if any and add ?.as to cast to a model type 
+
+// this needs to be tested for sure
 export async function sql(strings, ...values) {
     let param = 0
     const request = (await poolPromise).request()
@@ -35,10 +51,14 @@ export async function sql(strings, ...values) {
     return request.query(query)
 }
 
-export async function sqlFirst(strings, ...values) {
-    return (await sql(strings, ...values)).recordset[0]
+export function sqlFirst(strings, ...values) {
+    return sql(strings, ...values).then(r => r.recordset[0])
 }
 
 export async function sqlExists(strings, ...values) {
     return await sqlFirst(strings, ...values) !== undefined
+}
+
+export function sqlInsert(table, obj, identity) {
+    return poolPromise.then(p => p.request().insert(table.name ?? table, obj, identity))
 }

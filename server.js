@@ -2,8 +2,9 @@ import 'dotenv/config';
 import express from 'express'
 import authRoutes from './routes/auth.js'
 import { sql } from './sql/helpers.js'
-import { users } from './schema/Users.js'
+import users from './schema/Users.js'
 import { authorize } from './middleware/auth.js';
+import transporter from './config/mail.js';
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -12,8 +13,16 @@ app.use(express.json())
 app.use('/api/auth', authRoutes)
 
 // put general routes in separate router like authRoutes
-app.get('/', (req, res) => {
-    res.send('test')
+app.get('/', async (req, res) => {
+    const mailOptions = {
+        to: '420skun@gmail.com',
+        subject: 'Wyjebało w kosmos słonia',
+        html: '<p>email wysłany za pośrednictwem aplikacji Zwardon</p>'
+    }
+
+    const response = await transporter.sendMail(mailOptions)
+
+    res.send()
 })
 
 app.get('/protected', authorize(3), (req, res) => {

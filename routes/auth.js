@@ -2,27 +2,29 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { sql } from '../sql/helpers.js'
-import { users, carers } from '../schema/Users.js'
+import users, { User, Roles } from '../schema/Users.js'
 import { authenticate, authorize } from '../middleware/auth.js'
-import Roles from '../schema/Roles.js'
 import QRCode from 'qrcode'
 import asyncHandler from './asyncHandler.js'
 const router = express.Router()
 
 // put routes in object maybe
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body
+    const user = req.body.as(User)
 
-    if (await users.emailExists(email))
+    // here i guess what should remain is the validation logic but i wouldnt really send any messages because the front end needs to validate form input as well
+    if (!user.email || !user.password)
+        return res.sendStatus(400)
+
+    if (await users.emailExists(user.email))
         return res.sendStatus(409)
-
-    await carers.add(email, password)
+    
+    await user.registerCarer()
     return res.sendStatus(201)
 })
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
     const user = await users.getByEmail(email)
 
     if (user === undefined)
@@ -31,38 +33,36 @@ router.post('/login', async (req, res) => {
     if (!await bcrypt.compare(password, user.password))
         return res.sendStatus(401)
 
-    // this should probably be the whole user object if space permits
-    const token = {
-        id: user.id,
-        email: user.email,
-        role: user.role
-    }
-
-    res.json(jwt.sign(token, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }))
+    res.json(await user.generateAccessToken())
 })
 
-router.get('/qr', /* authorize(Roles.Carer), */asyncHandler(async (req, res) => {
-    // todo check if provided user id is owned by current user (carer)
+// careful with this because generating a token implicitly logs the patient out
+router.get('/qr', authorize(Roles.Carer), asyncHandler(async (req, res) => {
     const { id } = req.query
 
     if (id === undefined)
         return res.send(400)
 
-    const user = await users.get(id)
-    // also manage a device footprint
-    const token = {
-        id: user.id,
-        role: user.role
-    }
+    const patient = await users.get(id)
 
-    throw new Error('test')
+    if (patient === undefined)
+        return res.send(400)
 
-    const signed = jwt.sign(token, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN })
-    res.json(await QRCode.toDataURL(signed))
+    // todo check if req.user is the owner of user
+
+    res.json(await QRCode.toDataURL(await patient.generateAccessToken()))
+}))
+
+router.get('/logout', authenticate, asyncHandler(async (req, res) => {
+    req.user?.logout()
+    res.send(200)
+}))
+
+router.get('/verify', authenticate, asyncHandler(async (req, res) => {
+    if (!req.user?.verify(req.query.token))
+        return res.sendStatus(403)
+
+    res.send()
 }))
 
 export default router
-
-
-
-

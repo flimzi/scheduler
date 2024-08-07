@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import users from '../schema/Users.js'
 
 export const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization']
@@ -11,7 +12,14 @@ export const authenticate = (req, res, next) => {
         if (err)
             return res.sendStatus(403)
 
-        req.user = user
+        req.user = users.get(user.id)
+
+        if (req.user?.access_token !== token)
+            return res.sendStatus(403)
+
+        if (!req.user.verified)
+            return res.sendStatus(401) // this would be a case of an ambiguous error so might need to abstract the codes
+
         next()
     })
 }

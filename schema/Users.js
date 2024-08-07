@@ -1,7 +1,10 @@
-import { sql, sqlFirst } from '../sql/helpers.js'
-import bcrypt from 'bcryptjs'
+import { sql, sqlFirst, sqlInsert } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
-import Roles from './Roles.js'
+import { relationships, RelationshipTypes } from './Relationships.js'
+import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
+import transporter from '../config/mail.js'
 
 class Users extends DbObject {
     constructor() {
@@ -10,22 +13,28 @@ class Users extends DbObject {
 
     id = new DbObject('id')
     role = new DbObject('role')
-    createdAt = new DbObject('created_at')
-
-    userCredentials = new UserCredentials()
-    userDetails = new UserDetails()
-    usersFull = new DbObject('users_full')
-
-    add(role) {
-        return sqlFirst`INSERT INTO ${this} (${this.role}) VALUES (${role}); SELECT SCOPE_IDENTITY() AS id`.then(r => r.id)
+    created_at = new DbObject('created_at')
+    email = new DbObject('email')
+    password = new DbObject('password')
+    first_name = new DbObject('first_name')
+    last_name = new DbObject('last_name')
+    access_token = new DbObject('access_token')
+    
+    // things like this need a transaction fosho
+    addPatient(carer, patient) {
+        const patientId = sqlInsert(this, { ...patient, role: Roles.Patient }, true)
+        patient.id = sqlInsert(relationships, { carer_id: carer.id, patient_id: patientId, type: RelationshipTypes.Owner }, true)
+    
+        return patient
     }
 
+    // let Users have some logic as well for tradition sake
     get(id) {
-        return sqlFirst`SELECT * FROM ${this.usersFull} WHERE ${this.id} = ${id}`
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.asAsync(User)
     }
 
     getByEmail(email) {
-        return sqlFirst`SELECT * FROM ${this.usersFull} WHERE ${this.userCredentials.email} = ${email}`
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.asAsync(User)
     }
 
     async emailExists(email) {
@@ -33,39 +42,78 @@ class Users extends DbObject {
     }
 }
 
-class Carers extends Users {
-    async add(email, password) {
-        return this.userCredentials.add(await super.add(Roles.Carer), email, password)
+const users = new Users()
+
+export class Roles {
+    static Carer = 1
+    static Patient = 2
+}
+
+export class User {
+    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, access_token, verification_token, verified }) {
+        this.id = id
+        this.role = role
+        this.created_at = created_at
+        this.email = email
+        this.first_name = first_name
+        this.access_token = access_token // not sure if this maybe shouldnt be a getter
+        this.verification_token = verification_token // not sure if this maybe shouldnt be a getter
+        this.verified = verified
+    }
+
+    async generateAccessToken() {
+        const data = { id: this.id, email: this.email, role: this.role, first_name: this.first_name }
+        const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+
+        await sql`UPDATE TABLE ${users} SET ${users.access_token} = ${token} WHERE ${users.id} = ${this.id}`
+        return token
+    }
+
+    // i guess we should somehow check if the address is invalid because rn every error from this is potentially a 500 so not a lot of information
+    sendVerificationEmail() {
+        const mailOptions = {
+            to: this.email,
+            subject: 'Verify your Zwardon account',
+            html: `<p>Please verify your email by clicking on the following link: <a href="http://localhost:3000/verify?token=${this.verification_token}">Verify Email</a></p>`
+        }
+
+        return transporter.sendMail(mailOptions)
+    }
+
+    async verify(token) {
+        if (token !== this.verification_token)
+            return false
+
+        await sql`UPDATE TABLE ${users} SET ${users.verified} = 1 WHERE ${users.id} = ${this.id}`
+        return true
+    }
+
+    logout() {
+        return sql`UPDATE TABLE ${users} SET ${users.access_token} = NULL WHERE ${users.id} = ${this.id}`
+    }
+
+    async registerCarer(debug) {
+        this.id = undefined
+        this.role = Roles.Carer
+        this.verified = debug === true
+        this.verification_token = crypto.randomBytes(20).toString('hex')
+        this.password = await bcrypt.hash(this.password, 10)
+        this.access_token = undefined
+
+        this.id = await sqlInsert(users, this, true)
+        await this.sendVerificationEmail()
+
+        return this.id
+    }
+
+    async emailExists() {
+        
     }
 }
 
-class Patients extends Users {
+export default users
 
-}
-
-class UserCredentials extends DbObject {
-    constructor() {
-        super('user_credentials')
-    }
-
-    email = new DbObject('email')
-    userId = new DbObject('user_id')
-    password = new DbObject('password')
-
-    async add(userId, email, password) {
-        return sql`INSERT INTO ${this} (${this.userId}, ${this.email}, ${this.password}) VALUES (${userId}, ${email}, ${await bcrypt.hash(password, 10)})`
-    }
-}
-
-class UserDetails extends DbObject {
-    constructor() {
-        super('user_details')
-    }
-
-    firstName = new DbObject('first_name')
-    lastName = new DbObject('last_name')
-}
-
-export const users = new Users()
-export const carers = new Carers()
-export const patients = new Patients()
+// not sure about that yet but it could serve as an input validation layer and some sort of abstractions on top of that (setting req.user to this object for example)
+// export class User {
+//     constructor({ id, role, created_at,  })
+// }
