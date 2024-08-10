@@ -13,18 +13,15 @@ mssql.Request.prototype.inputQuery = function(query) {
 
 mssql.Request.prototype.insert = function(table, obj, identity) {
     const keys = Object.keys(obj)
-    const values = keys.map(key => this.addParam(key, values[key]))
+    const values = keys.map(key => this.addParam(key, obj[key]))
     const query = `INSERT INTO ${table} (${keys.join()}) VALUES (${values.join()});`
 
     if (identity)
-        return this.query(query + 'SELECT SCOPE_IDENTITY AS id').then(r => r.recordset[0].id)
+        return this.query(query + 'SELECT SCOPE_IDENTITY() AS id').then(r => r.recordset[0].id)
 
     return this.query(query)
 }
 
-// check what object type is IResult if any and add ?.as to cast to a model type 
-
-// this needs to be tested for sure
 export async function sql(strings, ...values) {
     let param = 0
     const request = (await poolPromise).request()

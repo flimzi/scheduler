@@ -12,7 +12,7 @@ CREATE TABLE [users] (
 	[height_cm] int,
 	[weight_kg] int,
 	[access_token] nvarchar(max),
-	[verification_token] nvarchar(max),
+	[verification_token] nvarchar(450),
 	[verified] bit NOT NULL DEFAULT 0,
 	PRIMARY KEY ([id])
 );
@@ -48,6 +48,7 @@ ALTER TABLE [events] ADD CONSTRAINT [events_fk4] FOREIGN KEY ([receiver_id]) REF
 
 CREATE INDEX [idx_users_role] ON [users] ([role])
 CREATE INDEX [idx_users_email] ON [users] ([email])
+CREATE INDEX [idx_users_verification_token] ON [users] ([verification_token])
 
 CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
 CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
