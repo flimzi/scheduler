@@ -1,13 +1,11 @@
 import express from 'express'
-import users, { Roles } from '../schema/Users.js'
+import { Roles } from '../schema/Users.js'
 import { authorize } from '../middleware/auth.js'
-import asyncHandler from './asyncHandler.js'
+import { asyncHandler } from '../helpers.js'
 const router = express.Router()
 
-router.post('/create', authorize(Roles.Carer), asyncHandler(async (req, res) => {
-    const { first_name } = req.body
-
-
+router.post('/', authorize(Roles.Carer), asyncHandler(async (req, res) => {
+    
 }))
 
 export default router

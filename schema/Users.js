@@ -1,11 +1,10 @@
 import { sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
-import jwt from 'jsonwebtoken'
-import crypto from 'crypto'
-import bcrypt from 'bcryptjs'
-import transporter from '../config/mail.js'
-import strings from '../resources/strings.en.js'
+import accessTokens, { AccessToken } from './AccessTokens.js'
+import Carer from './Carer.js'
+import Patient from './Patient.js'
+export { Carer, Patient }
 
 class Users extends DbObject {
     constructor() {
@@ -24,14 +23,13 @@ class Users extends DbObject {
     verification_token = new DbObject('verification_token')
 
     // things like this need a transaction fosho
-    addPatient(carer, patient) {
-        const patientId = sqlInsert(this, { ...patient, role: Roles.Patient }, true)
-        patient.id = sqlInsert(relationships, { carer_id: carer.id, patient_id: patientId, type: RelationshipTypes.Owner }, true)
+    // addPatient(carer, patient) {
+    //     const patientId = sqlInsert(this, { ...patient, role: Roles.Patient }, true)
+    //     patient.id = sqlInsert(relationships, { carer_id: carer.id, patient_id: patientId, type: RelationshipTypes.Owner }, true)
     
-        return patient
-    }
+    //     return patient
+    // }
 
-    // let Users have some logic as well for tradition sake
     get(id) {
         return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.asAsync(User)
     }
@@ -46,22 +44,6 @@ class Users extends DbObject {
 
     async emailExists(email) {
         return await this.getByEmail(email) !== undefined
-    }
-
-    async verify(token) {
-        if (!token)
-            return false
-
-        const user = this.getByVerificationToken(token)
-
-        if (user === undefined)
-            return false
-
-        if (user.verified)
-            return true
-
-        await sql`UPDATE ${this} SET ${this.verified} = 1 WHERE ${this.verification_token} = ${token}`
-        return true
     }
 }
 
@@ -78,69 +60,53 @@ export class Genders {
 }
 
 export class User {
-    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, access_token, verification_token, verified }) {
+    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified }) {
         this.id = id
         this.role = role
-        this.created_at = created_at // not sure about the type of this we are probably going to cast this in weird ways
+        this.created_at = created_at // i need to cast this to javasript datetime
         this.email = email
         this.first_name = first_name
-        this.access_token = access_token // not sure if this maybe shouldnt be a getter
-        this.verification_token = verification_token // not sure if this maybe shouldnt be a getter
+        this.verification_token = verification_token
         this.verified = verified || false
         this.password = password
         this.last_name = last_name
-        this.gender = gender || Genders.Male
+        this.gender = gender
         this.birth_date = birth_date
         this.phone_number = phone_number
     }
 
-    async generateAccessToken() {
-        const data = { id: this.id, email: this.email, role: this.role, first_name: this.first_name }
-        const token = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
-
-        await sql`UPDATE TABLE ${users} SET ${users.access_token} = ${token} WHERE ${users.id} = ${this.id}`
-        return this.access_token = token
+    static conversion({ role }) {
+        return {
+            [Roles.Carer]: Carer,
+            [Roles.Patient]: Patient
+        }[role] ?? User
     }
 
-    sendVerificationEmail() {
-        if (this.verified)
+    static async authenticate(token) {
+        const accessToken = await AccessToken.verify(token)
+        const tokenHash = AccessToken.hash(token)
+
+        if (!await sqlExists`SELECT 1 FROM ${accessTokens} WHERE ${accessTokens.hash} = ${tokenHash}`)
             return
 
-        const mailOptions = {
-            to: this.email,
-            subject: strings.verificationSubject,
-            html: strings.verificationHtmlBody.format(process.env.WEBSITE, this.verification_token)
-        }
+        const user = accessToken.convertAsync(this.conversion)
+        user.tokenHash = tokenHash
+        return user
+    }
 
-        return transporter.sendMail(mailOptions)
+    async generateAccessToken() {
+        const token = AccessToken.sign(this)
+        await sqlInsert(accessTokens, { user_id: this.id, hash: AccessToken.hash(token) })
+        return token
     }
 
     logout() {
-        delete this.access_token
-        return sql`UPDATE TABLE ${users} SET ${users.access_token} = NULL WHERE ${users.id} = ${this.id}`
+        return sql`DELETE FROM ${accessTokens} WHERE ${accessTokens.hash} = ${this.tokenHash}`
     }
 
-    async registerCarer() {
-        this.first_name = this.first_name?.toLettersOnly()
-        this.last_name = this.last_name?.toLettersOnly()
-        delete this.id
-        delete this.created_at
-        delete this.access_token
-        // delete this.verified // probably going to use this
-        this.role = Roles.Carer
-        this.verification_token = crypto.randomBytes(20).toString('hex')
-        this.password = await bcrypt.hash(this.password, 10)
-
-        this.id = await sqlInsert(users, this, true)
-        await this.sendVerificationEmail()
-
-        return this.id
+    logoutAll() {
+        return sql`DELETE FROM ${accessTokens} WHERE ${accessTokens.user_id} = ${this.id}`
     }
 }
 
 export default users
-
-// not sure about that yet but it could serve as an input validation layer and some sort of abstractions on top of that (setting req.user to this object for example)
-// export class User {
-//     constructor({ id, role, created_at,  })
-// }

@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import express from 'express'
 import authRoutes from './routes/auth.js'
-import mainRoutes from './routes/main.js'
+import mainRoutes, { MainRoutes } from './routes/main.js'
+import patientRoutes from './routes/patient.js'
 import { debounce } from './middleware/debounce.js';
 
 const app = express()
@@ -10,7 +11,8 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(express.static('public'))
 
-app.use('/api/auth', authRoutes)
+app.use(MainRoutes.auth, authRoutes)
+app.use('/api/patient', patientRoutes)
 app.use('', mainRoutes)
 
 app.get('/', debounce(1000), async (req, res) => {

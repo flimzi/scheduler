@@ -6,12 +6,11 @@ CREATE TABLE [users] (
 	[password] nvarchar(max),
 	[first_name] nvarchar(max),
 	[last_name] nvarchar(max),
-	[gender] int NOT NULL DEFAULT 0,
+	[gender] int,
 	[birth_date] datetime,
 	[phone_number] nvarchar(max),
 	[height_cm] int,
 	[weight_kg] int,
-	[access_token] nvarchar(max),
 	[verification_token] nvarchar(450),
 	[verified] bit NOT NULL DEFAULT 0,
 	PRIMARY KEY ([id])
@@ -39,6 +38,12 @@ CREATE TABLE [events] (
 	PRIMARY KEY ([id])
 );
 
+CREATE TABLE [access_tokens] (
+	[hash] nvarchar(450) NOT NULL,
+	[user_id] int NOT NULL,
+	PRIMARY KEY ([hash])
+)
+
 ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([carer_id]) REFERENCES [users]([id]);
 
 ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk2] FOREIGN KEY ([patient_id]) REFERENCES [users]([id]);
@@ -55,3 +60,5 @@ CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
 
 CREATE INDEX [idx_relationships_carer_id] ON [relationships] ([carer_id])
 CREATE INDEX [idx_relationships_patient_id] ON [relationships] ([patient_id])
+
+CREATE INDEX [idx_access_tokens_user_id] ON [access_tokens] ([user_id])

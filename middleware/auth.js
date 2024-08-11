@@ -1,30 +1,26 @@
-import jwt from 'jsonwebtoken'
-import users from '../schema/Users.js'
+import { Http } from '../helpers.js'
+import { User } from '../schema/Users.js'
+import { asyncHandler } from '../helpers.js'
 
-export const authenticate = (req, res, next) => {
+export const authenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
     if (token == null)
-        return res.sendStatus(401)
+        return res.sendStatus(Http.Status.BadRequest)
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err)
-            return res.sendStatus(403)
+    req.user = await User.authenticate(token)
 
-        req.user = users.get(user.id)
+    if (!req.user)
+        return res.sendStatus(Http.Status.Forbidden)
 
-        if (req.user?.access_token !== token)
-            return res.sendStatus(403)
+    next()
+})
 
-        next()
-    })
-}
-
-export const authorize = role => (req, res, next) => {
+export const authorize = (...roles) => (req, res, next) => {
     authenticate(req, res, () => {
-        if (req.user?.role !== role)
-            return res.sendStatus(403)
+        if (!roles.includes(req.user.role))
+            return res.sendStatus(Http.Status.Unauthorized)
     
         next()
     })

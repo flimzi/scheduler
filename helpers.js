@@ -21,6 +21,10 @@ Object.prototype.asAsync = async function(type) {
     return this.then(result => result?.as(type))
 }
 
+Object.prototype.convertAsync = async function(conversion) {
+    return this.then(result => result?.as(conversion(result)))
+}
+
 String.prototype.toLettersOnly = function() {
     return this.replace(/[^\p{L}]/gu, '')
 }

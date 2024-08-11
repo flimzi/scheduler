@@ -1,0 +1,30 @@
+###
+
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "email": "420skun@gmail.com",
+    "password": "Abc123"
+}
+
+###
+
+GET http://localhost:3000/verification?token=177afe741016d2d17db1aeae6a411aec7ab66257
+
+###
+
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "420skun@gmail.com",
+    "password": "Abc123"
+}
+
+###
+
+GET http://localhost:3000/api/auth/logout
+Authorization: token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiI0MjBza3VuQGdtYWlsLmNvbSIsInJvbGUiOjEsImZpcnN0X25hbWUiOm51bGwsImlhdCI6MTcyMzMzOTEyNCwiZXhwIjoxNzU0ODc1MTI0fQ.7Nur-M56Y7YQVrXBAKyj9g8XJK2i8d64OJ34CtmNEg0
+
+###
