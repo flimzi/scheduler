@@ -1,8 +1,9 @@
 import users, { Roles, User } from './Users.js'
 import transporter from '../config/mail.js'
-import { sql } from '../sql/helpers.js'
+import { sql, sqlInsert } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
+import { relationships, RelationshipTypes } from './Relationships.js'
 
 export default class Carer extends User {
     role = Roles.Carer
@@ -37,8 +38,6 @@ export default class Carer extends User {
     }
 
     async register() {
-        delete this.id
-        delete this.created_at
         this.first_name = this.first_name?.toLettersOnly()
         this.last_name = this.last_name?.toLettersOnly()
         this.verified = !!process.env.DEBUG
@@ -52,7 +51,25 @@ export default class Carer extends User {
         return this.id
     }
 
+    async addPatient(patient) {
+        delete patient.email
+        delete patient.password
+        delete patient.verification_token
+        patient.role = Roles.Patient
+        patient.verified = true
+        // this NEEDS to be in a transaction because we do not know about the actual state of this object so we cannot even assume that the id is correct
+        // and checking all of that all of the time is out of the question (assign transaction to req so that the error middleware can roll it back)
+        patient.id = await users.add(patient)
+        await relationships.add(this.id, patient.id, RelationshipTypes.Owner)
+
+        return patient
+    }
+
     getInfo() {
         return super.getInfo()
+    }
+
+    static fake() {
+        return User.fake().as(Carer)
     }
 }

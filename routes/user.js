@@ -1,6 +1,6 @@
 import express from 'express'
-import { authenticate, authorizeOwnerByRouteId } from '../middleware/auth.js'
-import { asyncHandler } from '../helpers.js'
+import { authenticate, authorize, authorizeOwnerByRouteId } from '../middleware/auth.js'
+import { asyncHandler, Http } from '../helpers.js'
 import { Roles } from '../schema/Users.js'
 import Patient from '../schema/Patient.js'
 const router = express.Router()
@@ -30,8 +30,8 @@ router.delete(UserRoutes.user(), authorizeOwnerByRouteId, asyncHandler(async (re
 }))
 
 router.post(UserRoutes.currentUser, authorize(Roles.Carer), asyncHandler(async (req, res) => {
-    const patient = req.body.as(Patient)
-    
+    await req.user.addPatient(req.body.as(Patient))
+    res.send(Http.Status.Created)
 }))
 
 export default router

@@ -1,7 +1,9 @@
 import { sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
+import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from './AccessTokens.js'
+
 
 class Users extends DbObject {
     constructor() {
@@ -44,6 +46,8 @@ class Users extends DbObject {
     }
 
     add(user) {
+        delete user.id
+        delete user.created_at
         return sqlInsert(this, user, true)
     }
 
@@ -126,6 +130,20 @@ export class User {
         delete user.verified
         delete user.tokenHash
         return user
+    }
+
+    static fake() {
+        return new User({
+            first_name: faker.person.firstName(),
+            last_name: faker.person.lastName(),
+            email: faker.internet.email(),
+            password: faker.internet.password(),
+            gender: Object.values(Genders).random(),
+            phone_number: faker.phone.number(),
+            birth_date: faker.date.birthdate(),
+            height_cm: faker.number.int(140, 210),
+            weight_kg: faker.number.int(40, 200),
+        })
     }
 }
 
