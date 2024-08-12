@@ -1,5 +1,5 @@
 import { Http } from '../helpers.js'
-import { User } from '../schema/Users.js'
+import users, { User } from '../schema/Users.js'
 import { asyncHandler } from '../helpers.js'
 
 export const authenticate = asyncHandler(async (req, res, next) => {
@@ -7,7 +7,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]
 
     if (token == null)
-        return res.sendStatus(Http.Status.BadRequest)
+        return res.sendStatus(Http.Status.Unauthorized)
 
     req.user = await User.authenticate(token)
 
@@ -25,3 +25,21 @@ export const authorize = (...roles) => (req, res, next) => {
         next()
     })
 }
+
+export const authorizeOwnerByRouteParameter = paramName => (req, res, next) => {
+    authenticate(req, res, async () => {
+        req.targetUser = await users.get(req.params[paramName])
+
+        if (req.targetUser === undefined)
+            return res.send(Http.Status.NotFound)
+
+        // check to see if there exists a relationship where the current user is the OWNER of the target user!!!
+
+        if (req.user.id !== req.params[paramName])
+            return res.send(Http.Status.Unauthorized)
+
+        next()
+    })
+}
+
+export const authorizeOwnerByRouteId = authorizeOwnerByRouteParameter('id')

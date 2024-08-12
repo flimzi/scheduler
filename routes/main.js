@@ -3,6 +3,7 @@ import { asyncHandler, Http } from '../helpers.js'
 import strings from '../resources/strings.en.js'
 import eventStream from '../middleware/eventStream.js'
 import { AuthRoutes } from './auth.js'
+import { UserRoutes } from './user.js'
 const router = express.Router()
 
 export class MainRoutes {
@@ -10,6 +11,12 @@ export class MainRoutes {
     static auth = this.api + '/auth'
 
     static verification = '/verification'
+}
+
+export class Routes {
+    static register = MainRoutes.auth + AuthRoutes.register
+    static login = MainRoutes.auth + AuthRoutes.login 
+    static user(id) { return MainRoutes.api + UserRoutes.user(id) }
 }
 
 router.get(MainRoutes.verification, eventStream, asyncHandler(async (req, res) => {

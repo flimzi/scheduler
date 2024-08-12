@@ -9,6 +9,18 @@ class AccessTokens extends DbObject {
 
     user_id = new DbObject('user_id')
     hash = new DbObject('hash')
+
+    get(hash) {
+        return sql`SELECT * FROM ${this} WHERE ${this.hash} = ${hash}`
+    }
+
+    remove(hash) {
+        return sql`DELETE FROM ${this} WHERE ${this.hash} = ${hash}`
+    }
+
+    removeForUser({ id }) {
+        return sql`DELETE FROM ${this} WHERE ${this.user_id} = ${id}`
+    }
 }
 
 const accessTokens = new AccessTokens()

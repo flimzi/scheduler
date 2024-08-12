@@ -1,10 +1,12 @@
-import users, { User } from './Users.js'
+import users, { Roles, User } from './Users.js'
 import transporter from '../config/mail.js'
 import { sql } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 
 export default class Carer extends User {
+    role = Roles.Carer
+
     sendVerificationEmail() {
         if (this.verified)
             return
@@ -44,9 +46,13 @@ export default class Carer extends User {
         this.verification_token = crypto.randomBytes(20).toString('hex')
         this.password = await bcrypt.hash(this.password, 10)
 
-        this.id = await sqlInsert(users, this, true)
+        this.id = await users.add(this)
         await this.sendVerificationEmail()
 
         return this.id
+    }
+
+    getInfo() {
+        return super.getInfo()
     }
 }

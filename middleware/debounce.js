@@ -3,7 +3,7 @@ const localhost = '::ffff:127.0.0.1'
 export function debounce(interval = 3000) {
     const requestTimestamps = {}
 
-    if (process.env.DEBUG)
+    if (!process.env.DEBOUNCE)
         return (req, res, next) => next()
 
     return (req, res, next) => {

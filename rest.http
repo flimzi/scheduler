@@ -10,6 +10,11 @@ Content-Type: application/json
 
 ###
 
+// need to also make a route for getting and removing current user which is this:
+DELETE http://localhost:3000/api/user/
+
+###
+
 GET http://localhost:3000/protected
 Authorization: token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJlc3RAdGVzdC5jb20iLCJyb2xlIjoxLCJpYXQiOjE3MjI4NjgxMTIsImV4cCI6MTcyMjg3MTcxMn0.OBoP3gYuJhUdpqSuYkKnEsCiIBCqJc8_Z1D0dLioeCw
 

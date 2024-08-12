@@ -56,9 +56,23 @@ Response.prototype.onError = function(handler) {
     return this.on(Http.Status.ServerError, handler)
 }
 
+// not sure about the logic of this
 Response.prototype.unhandled = function(handler) {
     if (!this.handled)
         return handler()
+}
+
+Array.prototype.random = function() {
+    return this[Math.floor(Math.random() * this.length)]
+}
+
+Array.range = function(length) {
+    return [...Array(length).keys()]
+}
+
+export function assert(property, value) {
+    if (property !== value)
+        throw new Error(`expected ${property} to be ${value}`)
 }
 
 export class Http {
@@ -73,7 +87,18 @@ export class Http {
         ServerError: 500,
     }
 
-    static postJson(url, obj) {
-        return fetch(url, { method: 'POST', headers: {'Content-Type' : 'application/json'}, body: JSON.stringify(obj) }).catch(e => new Response(e, { status: 0 }))
+    static fetch(url, init, accessToken) {
+        if (accessToken)
+            init.headers['Authorization'] = 'Bearer ' + accessToken
+
+        return fetch(url, init)
+    }
+
+    static postJson(url, obj, accessToken) {
+        return this.fetch(
+            url, 
+            { method: 'POST', headers: {'Content-Type' : 'application/json'}, body: JSON.stringify(obj) },
+            accessToken
+        ).catch(e => new Response(e, { status: 0 }))
     }
 }

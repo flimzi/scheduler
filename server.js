@@ -1,9 +1,10 @@
-import 'dotenv/config';
+import 'dotenv/config'
 import express from 'express'
 import authRoutes from './routes/auth.js'
 import mainRoutes, { MainRoutes } from './routes/main.js'
 import patientRoutes from './routes/patient.js'
-import { debounce } from './middleware/debounce.js';
+import { debounce } from './middleware/debounce.js'
+import { User } from './schema/User.js'
 
 const app = express()
 const port = process.env.PORT || 3000

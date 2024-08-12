@@ -2,9 +2,6 @@ import { sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import accessTokens, { AccessToken } from './AccessTokens.js'
-import Carer from './Carer.js'
-import Patient from './Patient.js'
-export { Carer, Patient }
 
 class Users extends DbObject {
     constructor() {
@@ -45,6 +42,14 @@ class Users extends DbObject {
     async emailExists(email) {
         return await this.getByEmail(email) !== undefined
     }
+
+    add(user) {
+        return sqlInsert(this, user, true)
+    }
+
+    delete(user) {
+        return sql`DELETE FROM ${this} WHERE ${this.id} = ${user.id}`
+    }
 }
 
 const users = new Users()
@@ -60,7 +65,7 @@ export class Genders {
 }
 
 export class User {
-    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified }) {
+    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg }) {
         this.id = id
         this.role = role
         this.created_at = created_at // i need to cast this to javasript datetime
@@ -73,22 +78,21 @@ export class User {
         this.gender = gender
         this.birth_date = birth_date
         this.phone_number = phone_number
-    }
-
-    static conversion({ role }) {
-        return {
-            [Roles.Carer]: Carer,
-            [Roles.Patient]: Patient
-        }[role] ?? User
+        this.height_cm = height_cm
+        this.weight_kg = weight_kg
     }
 
     static async authenticate(token) {
         const accessToken = await AccessToken.verify(token)
         const tokenHash = AccessToken.hash(token)
 
-        if (!await sqlExists`SELECT 1 FROM ${accessTokens} WHERE ${accessTokens.hash} = ${tokenHash}`)
+        // this is honestly pretty bad because it runs for every authenticated request but there is no other way to check this as far as im concerned
+        if (!await accessTokens.get(tokenHash))
             return
 
+        // convertAsync introduces a possibility for runtime errors but a method from carer shouldnt be ran on a patient anyway and vice versa so its good
+        // with the already relatively heavy access_tokens query above, a user fetch from the database seems not so unreasonable, but that should be reserved only
+        // for requests that really require detailed user data, as most of them only need the information in the token
         const user = accessToken.convertAsync(this.conversion)
         user.tokenHash = tokenHash
         return user
@@ -100,12 +104,28 @@ export class User {
         return token
     }
 
-    logout() {
-        return sql`DELETE FROM ${accessTokens} WHERE ${accessTokens.hash} = ${this.tokenHash}`
+    async logout() {
+        await accessTokens.remove(this.tokenHash)
+        delete this.tokenHash
     }
 
-    logoutAll() {
-        return sql`DELETE FROM ${accessTokens} WHERE ${accessTokens.user_id} = ${this.id}`
+    async logoutAll() {
+        await accessTokens.removeForUser(this)
+        delete this.tokenHash
+    }
+
+    async delete() {
+        await this.logoutAll()
+        await users.delete(this)
+    }
+
+    getInfo() {
+        const user = new User(this)
+        delete user.password
+        delete user.verification_token
+        delete user.verified
+        delete user.tokenHash
+        return user
     }
 }
 

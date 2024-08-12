@@ -1,11 +1,11 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
-import { User, Roles } from '../schema/Users.js'
+import users, { User, Roles } from '../schema/Users.js'
 import { authenticate, authorize } from '../middleware/auth.js'
 import { debounce, debounceMinute, debounceSecond } from '../middleware/debounce.js'
 import QRCode from 'qrcode'
 import { isValidEmail, asyncHandler, isStrongPassword } from '../helpers.js'
-import { AccessToken } from '../schema/AccessTokens.js'
+import { Carer } from '../schema/User.js'
 const router = express.Router()
 
 export class AuthRoutes {
@@ -18,27 +18,27 @@ export class AuthRoutes {
 }
 
 router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
-    const user = req.body.as(User)
+    const carer = req.body.as(Carer)
 
-    if (!isValidEmail(user.email) || !isStrongPassword(user.password))
+    if (!isValidEmail(carer.email) || !isStrongPassword(carer.password))
         return res.sendStatus(400)
 
-    if (await User.emailExists(user.email))
+    if (await users.emailExists(carer.email))
         return res.sendStatus(409)
     
-    await user.registerCarer()
+    await carer.register()
     return res.sendStatus(201)
 }))
 
 router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const user = await User.getByEmail(email)
+    const user = await users.getByEmail(email)
 
     if (!user?.verified)
         return res.send(401)
 
     if (!await bcrypt.compare(password, user.password))
-        return res.send(403)
+        return res.send(401)
 
     res.json(await user.generateAccessToken())
 }))
