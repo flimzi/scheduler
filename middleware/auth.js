@@ -26,6 +26,15 @@ export const authorize = (...roles) => (req, res, next) => {
     })
 }
 
+export const authorizeUser = type => (req, res, next) => {
+    authenticate(req, res, () => {
+        if (!req.user instanceof type)
+            return res.sendStatus(Http.Status.Unauthorized)
+
+        next()
+    })
+}
+
 export const authorizeOwnerByRouteParameter = paramName => (req, res, next) => {
     authenticate(req, res, async () => {
         req.targetUser = await users.get(req.params[paramName])
