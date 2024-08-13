@@ -39,17 +39,11 @@ export default class Carer extends User {
     }
 
     async register() {
-        this.first_name = this.first_name?.toLettersOnly().capitalFirst()
-        this.last_name = this.last_name?.toLettersOnly().capitalFirst()
-        this.verified = !!process.env.DEBUG
-        this.role = Roles.Carer
-        this.verification_token = crypto.randomBytes(20).toString('hex')
-        this.password = await bcrypt.hash(this.password, 10)
+        const model = await this.getUpdateModel()
+        model.id = await users.add(model)
+        await model.sendVerificationEmail()
 
-        this.id = await users.add(this)
-        await this.sendVerificationEmail()
-
-        return this.id
+        return model
     }
 
     async addPatient(patient) {
@@ -73,21 +67,38 @@ export default class Carer extends User {
         return super.getInfo()
     }
 
-    getUpdateModel() {
+    async getUpdateModel() {
         const model = super.getUpdateModel()
 
-        if (!isValidEmail(model.email) || users.emailExists(model.email))
-            throw new ArgumentError('wrong email for carer')
-    
-        if (!isStrongPassword(model.password))
-            throw new ArgumentError('wrong password for carer')
-
+        if (!isValidEmail(model.email) || !isStrongPassword(model.password))
+            throw new ArgumentError()
         
+        if (await users.emailExists(model.email))
+            throw new ArgumentError()
+
+        model.first_name = model.first_name?.toLettersOnly().capitalFirst()
+        model.last_name = model.last_name?.toLettersOnly().capitalFirst()
+        model.verified = !!process.env.DEBUG
+        model.role = Roles.Carer
+        model.verification_token = crypto.randomBytes(20).toString('hex')
+        model.password = await bcrypt.hash(model.password, 10)
 
         return model
     }
 
     static fake() {
         return User.fake().as(Carer)
+    }
+
+    delete() {
+        // todo add transaction support
+        // return sqlTransaction(t => {
+        //     super.delete()
+        // })
+
+        super.delete()
+        // todo delete all owned patients but i need to make a helper method for that that maybe returns info of all owned patients
+        // which can also be based on a helper method in Relationships
+        // or i could just put it in the trigger but i feel like more logic based requests would be better coded in here but not sure actually
     }
 }

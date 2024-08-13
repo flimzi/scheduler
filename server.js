@@ -56,4 +56,7 @@ app.use((err, req, res, next) => {
 
 app.listen(port, async () => {
     console.log(`Server running on port ${port}`)
+
+    const x = new User({ id: 100, role: 100, first_name: 'abcdef' })
+    const y = x.clone()
 })

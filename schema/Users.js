@@ -38,14 +38,11 @@ class Users extends DbObject {
     }
 
     add(user, transaction) {
-        delete user.id
-        delete user.created_at
         return sqlInsert(this, user, transaction)
     }
 
-    async update(user, transaction) {
-        const request = await createRequest(transaction)
-        await request.inputQuery(r => `
+    update(user, transaction) {
+        return createRequest(transaction).inputQuery(r => `
             UPDATE ${this} SET ${r.addUpdateList(user)}
             WHERE ${this.id} = ${user.id}
         `)
@@ -84,6 +81,7 @@ export class User {
         this.phone_number = phone_number
         this.height_cm = height_cm
         this.weight_kg = weight_kg
+        // this.deleteUndefinedProperties() // not sure where this should be or is it needed
     }
 
     static async authenticate(token) {
@@ -126,7 +124,7 @@ export class User {
     }
 
     clone() {
-        return this.constructor(this)
+        return new this.constructor(this)
     }
 
     getInfo() {

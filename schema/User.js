@@ -9,3 +9,7 @@ User.conversion = function({ role }) {
         [Roles.Patient]: Patient
     }[role] ?? User
 }
+
+User.from = function(obj) {
+    return obj.convert(User.conversion)
+}

@@ -2,6 +2,7 @@ import express from 'express'
 import { authenticate, authorizeUser, authorizeCarerByRouteId } from '../middleware/auth.js'
 import { asyncHandler, Http } from '../helpers.js'
 import { Routes } from './main.js'
+import users from '../schema/Users.js'
 import { User, Carer, Patient } from '../schema/User.js'
 const router = express.Router()
 
@@ -42,12 +43,10 @@ router.get(UserRoutes.logout(), authorizeCarerByRouteId, asyncHandler(async (req
     res.send()
 }))
 
-// this needs to be divided based on role because for example you cant remove email and password from a carer
-// although actually this can just be handled with an error in getUpdateModel
-router.update(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    const user = req.body.convert(User.conversion).getUpdateModel()
-
-
+router.patch(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
+    const user = await User.from(req.body).getUpdateModel()
+    await users.update(user)
+    res.send()
 }))
 
 export default router

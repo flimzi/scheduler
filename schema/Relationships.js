@@ -1,5 +1,5 @@
 import mssql from "mssql";
-import { sqlExists, sqlInsert } from "../sql/helpers.js";
+import { createRequest, sqlExists, sqlInsert } from "../sql/helpers.js";
 import DbObject from "./DbObject.js";
 
 class Relationships extends DbObject {
@@ -25,7 +25,7 @@ class Relationships extends DbObject {
         //     ${whereTypes}
         // `
     
-        const request = mssql.Request.create()
+        const request = createRequest()
         let whereTypes = ''
 
         if (types?.length)

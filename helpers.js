@@ -25,6 +25,16 @@ Object.prototype.convert = function(conversion) {
     return this.as(conversion(this))
 }
 
+Object.prototype.clone = function() {
+    return new this.constructor(this)
+}
+
+Object.prototype.deleteUndefinedProperties = function() {
+    for (const key in this)
+        if (this[key] === undefined)
+            delete this[key]
+}
+
 Object.prototype.equals = function(other) {
     return Object.keys(this).every(key => other.hasOwnProperty(key) && this[key] === other[key]);
 }

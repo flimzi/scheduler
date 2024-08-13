@@ -1,5 +1,5 @@
 import mssql from 'mssql'
-import { poolPromise } from '../config/db.js'
+import pool from '../config/db.js'
 import DbObject from '../schema/DbObject.js'
 
 mssql.Request.prototype.queryWithInfo = function(command) {
@@ -24,10 +24,11 @@ mssql.Request.prototype.addParam = function(value) {
 }
 
 mssql.Request.prototype.addParams = function(values) {
-    return values.map(this.addParam).join()
+    return values.map(this.addParam.bind(this)).join()
 }
 
 mssql.Request.prototype.addUpdateList = function(obj) {
+    obj.deleteUndefinedProperties()
     return Object.entries(obj).map(([col, val]) => `${col} = ${this.addParam(val)}`).join()
 }
 
@@ -44,6 +45,7 @@ mssql.Request.prototype.exists = function(query) {
 }
 
 mssql.Request.prototype.insert = function(table, obj, identity) {
+    obj.deleteUndefinedProperties() // kinda makes sense but kinda just a quick fix
     const query = `INSERT INTO ${table.name ?? table} (${Object.keys(obj).join()}) VALUES (${this.addParams(Object.values(obj))});`
 
     if (identity)
@@ -63,11 +65,11 @@ mssql.Request.prototype.sql = function(strings, ...values) {
 mssql.Transaction.prototype.sql = function(strings, ...values) { return this.request().sql(strings, ...values) }
 mssql.Transaction.prototype.insert = function (table, obj, identity) { return this.request().insert(table, obj, identity) }
 
-export const createTransaction = async () => new mssql.Transaction(await poolPromise)
-export const createRequest = async transaction => new mssql.Request(transaction ?? await poolPromise)
+export const createTransaction = () => new mssql.Transaction(pool)
+export const createRequest = transaction => new mssql.Request(transaction ?? pool)
 
 export async function sqlTransaction(operations) {
-    const transaction = new mssql.Transaction(await poolPromise)
+    const transaction = createTransaction()
     await transaction.begin()
 
     await operations(transaction).catch(async e => {
@@ -90,9 +92,9 @@ export async function sqlInsert(table, obj, transaction) {
     return (await createRequest(transaction)).insert(table, obj, true)
 }
 
-export const sql = async (strings, ...values) => new mssql.Request(await poolPromise).sql(strings, ...values)
-export const sqlFirst = async (strings, ...values) => new mssql.Request(await poolPromise).sqlFirst(strings, ...values)
-export const sqlExists = async (strings, ...values) => new mssql.Request(await poolPromise).sqlExists(strings, ...values)
+export const sql = (strings, ...values) => createRequest().sql(strings, ...values)
+export const sqlFirst = (strings, ...values) => createRequest().sqlFirst(strings, ...values)
+export const sqlExists = (strings, ...values) => createRequest().sqlExists(strings, ...values)
 
 // would be nice to make it so that you can use it like sqlUpdate(users, userUpdateModel, transaction)`WHERE ${users.id} = ${id}`
 // pretty sure thats not possible but i can in condition use sqlParse but that is also not going to work because its not a method on Request

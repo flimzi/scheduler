@@ -1,17 +1,17 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
-import users, { User, Roles } from '../schema/Users.js'
-import { authenticate, authorize } from '../middleware/auth.js'
-import { debounce, debounceMinute, debounceSecond } from '../middleware/debounce.js'
+import users from '../schema/Users.js'
+import { authenticate, authorizeCarerByRouteId } from '../middleware/auth.js'
+import { debounceSecond } from '../middleware/debounce.js'
 import QRCode from 'qrcode'
-import { isValidEmail, asyncHandler, isStrongPassword } from '../helpers.js'
-import { Carer } from '../schema/User.js'
+import { asyncHandler } from '../helpers.js'
+import { User, Carer } from '../schema/User.js'
 const router = express.Router()
 
 export class AuthRoutes {
     static register = '/register'
     static login = '/login'
-    static qr = '/qr'
+    static qr(id = ':id') { return '/qr/' + id }
     static logout = '/logout'
     static logoutAll = '/logoutAll'
     static verify = '/verify'
@@ -19,13 +19,6 @@ export class AuthRoutes {
 
 router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
     const carer = req.body.as(Carer)
-
-    if (!isValidEmail(carer.email) || !isStrongPassword(carer.password))
-        return res.sendStatus(400)
-
-    if (await users.emailExists(carer.email))
-        return res.sendStatus(409)
-    
     await carer.register()
     return res.sendStatus(201)
 }))
@@ -43,20 +36,9 @@ router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
     res.json(await user.generateAccessToken())
 }))
 
-router.get(AuthRoutes.qr, authorize(Roles.Carer), asyncHandler(async (req, res) => {
-    const { id } = req.query
 
-    if (id === undefined)
-        return res.send(400)
-
-    const patient = await User.get(id)
-
-    if (patient === undefined)
-        return res.send(400)
-
-    // todo check if req.user is the owner of user
-
-    res.json(await QRCode.toDataURL(await patient.generateAccessToken()))
+router.get(AuthRoutes.qr(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
+    res.json(await QRCode.toDataURL(await req.targetUser.generateAccessToken()))
 }))
 
 router.get(AuthRoutes.logout, authenticate, asyncHandler(async (req, res) => {
