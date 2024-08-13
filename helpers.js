@@ -17,16 +17,28 @@ Object.prototype.as = function(type) {
     return new type(this)
 }
 
-Object.prototype.asAsync = async function(type) {
+Promise.prototype.as = async function(type) {
     return this.then(result => result?.as(type))
 }
 
-Object.prototype.convertAsync = async function(conversion) {
-    return this.then(result => result?.as(conversion(result)))
+Object.prototype.convert = function(conversion) {
+    return this.as(conversion(this))
+}
+
+Object.prototype.equals = function(other) {
+    return Object.keys(this).every(key => other.hasOwnProperty(key) && this[key] === other[key]);
+}
+
+Promise.prototype.convert = function(conversion) {
+    return this.then(result => result?.convert(conversion))
 }
 
 String.prototype.toLettersOnly = function() {
     return this.replace(/[^\p{L}]/gu, '')
+}
+
+String.prototype.capitalFirst = function() {
+    return this && (this[0].toUpperCase() + this.slice(1).toLowerCase())
 }
 
 IncomingMessage.prototype.baseUrl = function(route = '') {
@@ -35,6 +47,10 @@ IncomingMessage.prototype.baseUrl = function(route = '') {
 
 String.prototype.format = function(...values) {
     return this.replace(/{(\d+)}/g, (match, index) => typeof values[index] !== 'undefined' ? values[index] : match)
+}
+
+String.prototype.removeNewline = function() {
+    return this.replace(/[\r\n]+/g, '')
 }
 
 Response.prototype.on = function(status, handler) {
@@ -102,3 +118,5 @@ export class Http {
         ).catch(e => new Response(e, { status: 0 }))
     }
 }
+
+export class ArgumentError extends Error {}

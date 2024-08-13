@@ -1,9 +1,10 @@
 import users, { Roles, User } from './Users.js'
 import transporter from '../config/mail.js'
-import { sql, sqlInsert } from '../sql/helpers.js'
+import { sql, sqlInsert, sqlTransaction } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { relationships, RelationshipTypes } from './Relationships.js'
+import { ArgumentError, isStrongPassword, isValidEmail } from '../helpers.js'
 
 export default class Carer extends User {
     role = Roles.Carer
@@ -38,8 +39,8 @@ export default class Carer extends User {
     }
 
     async register() {
-        this.first_name = this.first_name?.toLettersOnly()
-        this.last_name = this.last_name?.toLettersOnly()
+        this.first_name = this.first_name?.toLettersOnly().capitalFirst()
+        this.last_name = this.last_name?.toLettersOnly().capitalFirst()
         this.verified = !!process.env.DEBUG
         this.role = Roles.Carer
         this.verification_token = crypto.randomBytes(20).toString('hex')
@@ -55,18 +56,35 @@ export default class Carer extends User {
         delete patient.email
         delete patient.password
         delete patient.verification_token
+        patient.first_name = patient.first_name?.toLettersOnly().capitalFirst()
+        patient.last_name = patient.last_name?.toLettersOnly().capitalFirst()
         patient.role = Roles.Patient
         patient.verified = true
-        // this NEEDS to be in a transaction because we do not know about the actual state of this object so we cannot even assume that the id is correct
-        // and checking all of that all of the time is out of the question (assign transaction to req so that the error middleware can roll it back)
-        patient.id = await users.add(patient)
-        await relationships.add(this.id, patient.id, RelationshipTypes.Owner)
+
+        await sqlTransaction(async t => {
+            patient.id = await users.add(patient, t)
+            await relationships.add(this.id, patient.id, RelationshipTypes.Owner, t)
+        })
 
         return patient
     }
 
     getInfo() {
         return super.getInfo()
+    }
+
+    getUpdateModel() {
+        const model = super.getUpdateModel()
+
+        if (!isValidEmail(model.email) || users.emailExists(model.email))
+            throw new ArgumentError('wrong email for carer')
+    
+        if (!isStrongPassword(model.password))
+            throw new ArgumentError('wrong password for carer')
+
+        
+
+        return model
     }
 
     static fake() {

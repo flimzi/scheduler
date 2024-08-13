@@ -1,6 +1,7 @@
 import { Http } from '../helpers.js'
 import users, { User } from '../schema/Users.js'
 import { asyncHandler } from '../helpers.js'
+import { relationships } from '../schema/Relationships.js'
 
 export const authenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers['authorization']
@@ -35,20 +36,18 @@ export const authorizeUser = type => (req, res, next) => {
     })
 }
 
-export const authorizeOwnerByRouteParameter = paramName => (req, res, next) => {
+export const authorizeCarerByRouteParameter = paramName => (req, res, next) => {
     authenticate(req, res, async () => {
         req.targetUser = await users.get(req.params[paramName])
 
-        if (req.targetUser === undefined)
+        if (!req.targetUser)
             return res.send(Http.Status.NotFound)
 
-        // check to see if there exists a relationship where the current user is the OWNER of the target user!!!
-
-        if (req.user.id !== req.params[paramName])
+        if (req.user.id !== req.params[paramName] && !relationships.exists(req.user.id, req.targetUser.id))
             return res.send(Http.Status.Unauthorized)
 
         next()
     })
 }
 
-export const authorizeOwnerByRouteId = authorizeOwnerByRouteParameter('id')
+export const authorizeCarerByRouteId = authorizeCarerByRouteParameter('id')

@@ -1,4 +1,4 @@
-import { sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
+import { createRequest, sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { fakerPL as faker } from '@faker-js/faker'
@@ -21,34 +21,34 @@ class Users extends DbObject {
     verified = new DbObject('verified')
     verification_token = new DbObject('verification_token')
 
-    // things like this need a transaction fosho
-    // addPatient(carer, patient) {
-    //     const patientId = sqlInsert(this, { ...patient, role: Roles.Patient }, true)
-    //     patient.id = sqlInsert(relationships, { carer_id: carer.id, patient_id: patientId, type: RelationshipTypes.Owner }, true)
-    
-    //     return patient
-    // }
-
     get(id) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.asAsync(User)
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.as(User)
     }
 
     getByEmail(email) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.asAsync(User)
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.as(User)
     }
 
     getByVerificationToken(token) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.asAsync(User)
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.as(User)
     }
 
     async emailExists(email) {
         return await this.getByEmail(email) !== undefined
     }
 
-    add(user) {
+    add(user, transaction) {
         delete user.id
         delete user.created_at
-        return sqlInsert(this, user, true)
+        return sqlInsert(this, user, transaction)
+    }
+
+    async update(user, transaction) {
+        const request = await createRequest(transaction)
+        await request.inputQuery(r => `
+            UPDATE ${this} SET ${r.addUpdateList(user)}
+            WHERE ${this.id} = ${user.id}
+        `)
     }
 
     delete(user) {
@@ -91,21 +91,19 @@ export class User {
         const tokenHash = AccessToken.hash(token)
 
         // this is honestly pretty bad because it runs for every authenticated request but there is no other way to check this as far as im concerned
-        if (!await accessTokens.get(tokenHash))
+        if (!await accessTokens.get(accessToken.id, tokenHash))
             return
 
-        // convertAsync introduces a possibility for runtime errors but a method from carer shouldnt be ran on a patient anyway and vice versa so its good
-        // with the already relatively heavy access_tokens query above, a user fetch from the database seems not so unreasonable, but that should be reserved only
-        // for requests that really require detailed user data, as most of them only need the information in the token
-        const user = accessToken.convertAsync(this.conversion)
+        const user = accessToken.convert(this.conversion)
         user.tokenHash = tokenHash
         return user
     }
 
     async generateAccessToken() {
-        const token = AccessToken.sign(this)
-        await sqlInsert(accessTokens, { user_id: this.id, hash: AccessToken.hash(token) })
-        return token
+        const accessToken = new AccessToken(this)
+        const signed = accessToken.sign()
+        await sqlInsert(accessTokens, { user_id: this.id, hash: AccessToken.hash(signed) })
+        return signed
     }
 
     async logout() {
@@ -119,16 +117,32 @@ export class User {
     }
 
     async delete() {
-        await this.logoutAll()
+        // await this.logoutAll() // trigger does this
         await users.delete(this)
     }
 
+    fetch() {
+        return users.get(this.id) 
+    }
+
+    clone() {
+        return this.constructor(this)
+    }
+
     getInfo() {
-        const user = new User(this)
+        const user = this.clone()
         delete user.password
         delete user.verification_token
         delete user.verified
         delete user.tokenHash
+        return user
+    }
+
+    getUpdateModel() {
+        const user = this.clone()
+        delete user.id
+        delete user.created_at
+
         return user
     }
 

@@ -1,6 +1,7 @@
 import DbObject from "./DbObject.js";
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import { sql, sqlFirst } from '../sql/helpers.js'
 
 class AccessTokens extends DbObject {
     constructor() {
@@ -10,8 +11,8 @@ class AccessTokens extends DbObject {
     user_id = new DbObject('user_id')
     hash = new DbObject('hash')
 
-    get(hash) {
-        return sql`SELECT * FROM ${this} WHERE ${this.hash} = ${hash}`
+    get(id, hash) {
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.hash} = ${hash} AND ${this.user_id} = ${id}`
     }
 
     remove(hash) {
@@ -27,8 +28,16 @@ const accessTokens = new AccessTokens()
 export default accessTokens
 
 export class AccessToken {
-    static sign({ id, email, role, first_name }) {
-        return jwt.sign({ id, email, role, first_name }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+    constructor({ id, email, role, first_name }) {
+        this.id = id
+        this.email = email
+        this.role = role
+        this.first_name = first_name
+    }
+
+    sign() {
+        const { ...payload } = this
+        return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
     }
 
     static hash(token) {

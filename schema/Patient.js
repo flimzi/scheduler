@@ -5,7 +5,7 @@ export default class Patient extends User {
     role = Roles.Patient
 
     static get(id) {
-        return users.get(id)?.asAsync(Patient)
+        return users.get(id)?.as(Patient)
     }
 
     async addCarer(carer) {

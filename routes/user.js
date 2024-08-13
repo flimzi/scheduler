@@ -1,37 +1,53 @@
 import express from 'express'
-import { authenticate, authorize, authorizeOwnerByRouteId } from '../middleware/auth.js'
+import { authenticate, authorizeUser, authorizeCarerByRouteId } from '../middleware/auth.js'
 import { asyncHandler, Http } from '../helpers.js'
-import { Roles } from '../schema/Users.js'
-import Patient from '../schema/Patient.js'
+import { Routes } from './main.js'
+import { User, Carer, Patient } from '../schema/User.js'
 const router = express.Router()
 
 export class UserRoutes {
-    static currentUser = '/user'
-    static user(id = ':id') { return '/user/' + id }
+    static currentUser = ''
+    static user(id = ':id') { return UserRoutes.currentUser + '/' + id }
+    static logout(id = ':id') { return UserRoutes.user(id) + '/logout' }
 }
 
 router.get(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    res.json(req.user.getInfo())
+    // res.json(req.user.getInfo())
+    req.user.fetch().then(u => res.json(u.getInfo()))
 }))
 
 router.delete(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    req.user.delete()
+    await req.user.delete()
     res.send()
 }))
 
-// this needs to be authorized because access to other users shouldnt be possible in this program
-router.get(UserRoutes.user(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
+router.post(UserRoutes.currentUser, authorizeUser(Carer), asyncHandler(async (req, res) => {
+    const { id } = await req.user.addPatient(req.body.as(Patient))
+    
+    res.status(Http.Status.Created).location(Routes.user(id)).send(id + '')
+}))
+
+// fyi this needs to be authorized because access to other users shouldnt be possible in this program
+router.get(UserRoutes.user(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
     res.json(req.targetUser.getInfo())
 }))
 
-router.delete(UserRoutes.user(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
-    req.targetUser.delete()
+router.delete(UserRoutes.user(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
+    await req.targetUser.delete()
     res.send()
 }))
 
-router.post(UserRoutes.currentUser, authorize(Roles.Carer), asyncHandler(async (req, res) => {
-    await req.user.addPatient(req.body.as(Patient))
-    res.send(Http.Status.Created)
+router.get(UserRoutes.logout(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
+    await res.targetUser.logoutAll()
+    res.send()
+}))
+
+// this needs to be divided based on role because for example you cant remove email and password from a carer
+// although actually this can just be handled with an error in getUpdateModel
+router.update(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
+    const user = req.body.convert(User.conversion).getUpdateModel()
+
+
 }))
 
 export default router
