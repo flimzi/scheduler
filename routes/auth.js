@@ -33,7 +33,7 @@ router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
     if (!await bcrypt.compare(password, user.password))
         return res.send(401)
 
-    res.json(await user.generateAccessToken())
+    res.send(await user.generateAccessToken())
 }))
 
 

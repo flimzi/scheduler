@@ -12,22 +12,37 @@ function baseUrl(route) {
 async function registerCarer() {
     const carer = Carer.fake()
     const response = await Http.postJson(baseUrl(Routes.register), carer)
-    assert(response.status === Http.Status.Created)
+    assert(response.status, Http.Status.Created)
+    console.log(carer)
     return carer
 }
 
-async function removeUser({ id, accessToken }) {
-    const response = await Http.fetch(baseUrl(Routes.user(id)), { method: 'DELETE' }, accessToken)
+async function removeUser({ accessToken }) {
+    const response = await Http.delete(baseUrl(Routes.currentUser), accessToken)
+    assert(response.ok)
+}
+
+async function removeUserId({ id, accessToken }) {
+    const response = await Http.delete(baseUrl(Routes.user(id)), accessToken)
     assert(response.ok)
 }
 
 async function loginCarer(carer) {
     const response = await Http.postJson(baseUrl(Routes.login), { email: carer.email, password: carer.password })
     assert(response.ok)
-    carer.accessToken = response.body
-    console.log(response.body)
+    carer.accessToken = await response.text()
+    console.log(carer.accessToken)
 }
 
-// const carers = Array.range(20).map(registerCarer)
-// carers.map(loginCarer)
-// carers.map(removeUser)
+const carers = []
+
+for (let i = 0; i < 20; i++)
+    carers.push(await registerCarer())
+
+for (const carer of carers) {
+    await loginCarer(carer)
+}
+
+for (const carer of carers) {
+    await removeUser(carer) // also remove from carers
+}

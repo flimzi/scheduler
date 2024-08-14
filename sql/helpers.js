@@ -5,16 +5,19 @@ import DbObject from '../schema/DbObject.js'
 export const createTransaction = () => new mssql.Transaction(pool)
 export const createRequest = transaction => new mssql.Request(transaction ?? pool)
 
-export async function sqlTransaction(operations) {
-    const transaction = createTransaction()
-    await transaction.begin()
+export async function sqlTransaction(operations, parentTransaction) {
+    const transaction = parentTransaction ?? createTransaction()
+
+    if (!parentTransaction)
+        await transaction.begin()
 
     await operations(transaction).catch(async e => {
         await transaction.rollback()
         throw e
     })
 
-    await transaction.commit()
+    if (!parentTransaction)
+        await transaction.commit()
 }
 
 mssql.Request.prototype.command = ''
@@ -88,12 +91,21 @@ mssql.Request.prototype.sqlId = function(strings, ...values) {
 
 mssql.Request.prototype.insert = function(table, obj) {
     obj.deleteUndefinedProperties()
-    return this.sqlId`INSERT INTO ${table} (${Object.keys(obj)}) VALUES (${Object.values(obj)}); SELECT SCOPE_IDENTITY() AS id`
+    return this.sqlId`INSERT INTO ${table} (${new DbObject(Object.keys(obj).join())}) VALUES (${Object.values(obj)}); SELECT SCOPE_IDENTITY() AS id`
 }
 
 mssql.Request.prototype.update = function(table, obj) {
     obj.deleteUndefinedProperties()
     this.parse`UPDATE ${table} SET ${obj}`
+
+    return (strings, ...values) => {
+        this.parse(strings, ...values)
+        return this.run()
+    }
+}
+
+mssql.Request.prototype.delete = function(table) {
+    this.parse`DELETE FROM ${table}`
 
     return (strings, ...values) => {
         this.parse(strings, ...values)
@@ -111,3 +123,4 @@ export const sqlId = (strings, ...values) => createRequest().sqlId(strings, ...v
 export const sqlUsing = transaction => (strings, ...values) => createRequest(transaction).sql(strings, ...values)
 export const sqlInsert = (table, obj, transaction) => createRequest(transaction).insert(table, obj)
 export const sqlUpdate = (table, obj, transaction) => createRequest(transaction).update(table, obj)
+export const sqlDelete = (table, transaction) => createRequest(transaction).delete(table)

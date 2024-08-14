@@ -4,7 +4,6 @@ import { relationships, RelationshipTypes } from './Relationships.js'
 import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from './AccessTokens.js'
 
-
 class Users extends DbObject {
     constructor() {
         super('users')
@@ -22,14 +21,24 @@ class Users extends DbObject {
     verification_token = new DbObject('verification_token')
 
     get(id) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.as(User)
+        if (id === undefined)
+            return undefined
+
+        // should this be .then(User.from)? i dont really know where or if there is a limit to the conversion possibilities
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.as(User) 
     }
 
     getByEmail(email) {
+        if (email === undefined)
+            return undefined
+
         return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.as(User)
     }
 
     getByVerificationToken(token) {
+        if (token === undefined)
+            return undefined
+
         return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.as(User)
     }
 

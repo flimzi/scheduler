@@ -4,6 +4,9 @@ import Patient from './Patient.js'
 export { User, Carer, Patient }
 
 User.conversion = function({ role }) {
+    if (role === undefined)
+        return undefined
+
     return {
         [Roles.Carer]: Carer,
         [Roles.Patient]: Patient
@@ -11,5 +14,5 @@ User.conversion = function({ role }) {
 }
 
 User.from = function(obj) {
-    return obj.convert(User.conversion)
+    return obj?.convert(User.conversion)
 }

@@ -104,11 +104,15 @@ Array.prototype.random = function() {
     return this[Math.floor(Math.random() * this.length)]
 }
 
-Array.range = function(length) {
-    return [...Array(length).keys()]
+Object.prototype.toArray = function() {
+    return [...this]
 }
 
-export function assert(property, value) {
+Array.range = function(length) {
+    return Array(length).keys().toArray()
+}
+
+export function assert(property, value = true) {
     if (property !== value)
         throw new Error(`expected ${property} to be ${value}`)
 }
@@ -126,18 +130,32 @@ export class Http {
     }
 
     static fetch(url, init, accessToken) {
+        init.headers ??= {}
+
         if (accessToken)
             init.headers['Authorization'] = 'Bearer ' + accessToken
 
-        return fetch(url, init)
+        return fetch(url, init).catch(e => new Response(e, { status: 0 }))
+    }
+
+    static fetchJson(url, init, obj, accessToken) {
+        init.headers ??= {}
+        init.headers['Content-Type'] = 'application/json'
+        init.body = JSON.stringify(obj)
+
+        return this.fetch(url, init, accessToken)
     }
 
     static postJson(url, obj, accessToken) {
-        return this.fetch(
-            url, 
-            { method: 'POST', headers: {'Content-Type' : 'application/json'}, body: JSON.stringify(obj) },
-            accessToken
-        ).catch(e => new Response(e, { status: 0 }))
+        return this.fetchJson(url, { method: 'POST' }, obj, accessToken)
+    }
+
+    static delete(url, accessToken) {
+        return this.fetch(url, { method: 'DELETE' }, accessToken)
+    }
+
+    static putJson(url, obj, accessToken) {
+        return this.fetchJson(url, { method: 'PUT' }, obj, accessToken)
     }
 }
 

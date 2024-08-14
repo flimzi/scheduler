@@ -1,6 +1,6 @@
 import users, { Roles, User } from './Users.js'
 import transporter from '../config/mail.js'
-import { sql, sqlInsert, sqlTransaction, sqlUpdate } from '../sql/helpers.js'
+import { sql, sqlDelete, sqlInsert, sqlTransaction, sqlUpdate, sqlUsing } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { relationships, RelationshipTypes } from './Relationships.js'
@@ -71,11 +71,14 @@ export default class Carer extends User {
     async getUpdateModel() {
         const model = super.getUpdateModel()
 
-        if (!isValidEmail(model.email) || !isStrongPassword(model.password))
-            throw new ArgumentError()
+        if (!isValidEmail(model.email))
+            throw new ArgumentError(`${model.email} is not a valid email`)
         
+        if (!process.env.DEBUG && !isStrongPassword(model.password))
+            throw new ArgumentError(`${model.password} is not a strong password`)
+
         if (await users.emailExists(model.email))
-            throw new ArgumentError()
+            throw new ArgumentError(`user ${model.email} already exists`)
 
         model.first_name = model.first_name?.toLettersOnly().capitalFirst()
         model.last_name = model.last_name?.toLettersOnly().capitalFirst()
@@ -90,16 +93,15 @@ export default class Carer extends User {
     static fake() {
         return User.fake().as(Carer)
     }
-
+ 
     delete(transaction) {
-        // todo add transaction support
-        // return sqlTransaction(t => {
-        //     super.delete()
-        // })
-
-        super.delete()
-        // todo delete all owned patients but i need to make a helper method for that that maybe returns info of all owned patients
-        // which can also be based on a helper method in Relationships
-        // or i could just put it in the trigger but i feel like more logic based requests would be better coded in here but not sure actually
+        return sqlTransaction(async t => {
+            await sqlUsing(t)`
+                DELETE u FROM ${users} u
+                JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
+                WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
+            `
+            await super.delete(t)
+        }, transaction)
     }
 }
