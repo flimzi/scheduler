@@ -1,6 +1,6 @@
 import users, { Roles, User } from './Users.js'
 import transporter from '../config/mail.js'
-import { sql, sqlInsert, sqlTransaction } from '../sql/helpers.js'
+import { sql, sqlInsert, sqlTransaction, sqlUpdate } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { relationships, RelationshipTypes } from './Relationships.js'
@@ -34,7 +34,8 @@ export default class Carer extends User {
         if (user.verified)
             return true
 
-        await sql`UPDATE ${users} SET ${users.verified} = 1 WHERE ${users.verification_token} = ${token}`
+        // await sql`UPDATE ${users} SET ${users.verified} = 1 WHERE ${users.verification_token} = ${token}`
+        await sqlUpdate(users, { 'verified': 1 })`WHERE ${users.verification_token} = ${token}`
         return true
     }
 
@@ -90,7 +91,7 @@ export default class Carer extends User {
         return User.fake().as(Carer)
     }
 
-    delete() {
+    delete(transaction) {
         // todo add transaction support
         // return sqlTransaction(t => {
         //     super.delete()

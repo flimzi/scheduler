@@ -35,8 +35,20 @@ Object.prototype.deleteUndefinedProperties = function() {
             delete this[key]
 }
 
-Object.prototype.equals = function(other) {
+Object.prototype.propertyEquality = function(other) {
     return Object.keys(this).every(key => other.hasOwnProperty(key) && this[key] === other[key]);
+}
+
+Object.prototype.isFunction = function() {
+    return typeof this === 'function'
+}
+
+Object.prototype.isString = function() {
+    return typeof this === 'string' || this instanceof String
+}
+
+Object.prototype.isNumber = function() {
+    return typeof this === 'number'
 }
 
 Promise.prototype.convert = function(conversion) {

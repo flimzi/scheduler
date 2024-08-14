@@ -4,7 +4,7 @@ import authRoutes from './routes/auth.js'
 import mainRoutes, { Routes } from './routes/main.js'
 import mssql from 'mssql'
 import { Carer, User } from './schema/User.js'
-import { sqlTransaction } from './sql/helpers.js'
+import { sqlTransaction, sqlUpdate } from './sql/helpers.js'
 import users from './schema/Users.js'
 import { ArgumentError, asyncHandler, Http } from './helpers.js'
 import userRoutes from './routes/user.js'
@@ -57,6 +57,10 @@ app.use((err, req, res, next) => {
 app.listen(port, async () => {
     console.log(`Server running on port ${port}`)
 
-    const x = new User({ id: 100, role: 100, first_name: 'abcdef' })
-    const y = x.clone()
+    // const x = new User({ id: 100, role: 100, first_name: 'abcdef' })
+    // const y = x.clone()
+    // y.first_name = 'bbbbbb'
+
+    const x = User.fake().getUpdateModel()
+    await sqlUpdate(users, x)`WHERE ${users.id} = ${7}`
 })

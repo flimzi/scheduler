@@ -1,4 +1,4 @@
-import { createRequest, sql, sqlExists, sqlFirst, sqlInsert } from '../sql/helpers.js'
+import { createRequest, sql, sqlExists, sqlFirst, sqlInsert, sqlUsing } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { fakerPL as faker } from '@faker-js/faker'
@@ -42,14 +42,11 @@ class Users extends DbObject {
     }
 
     update(user, transaction) {
-        return createRequest(transaction).inputQuery(r => `
-            UPDATE ${this} SET ${r.addUpdateList(user)}
-            WHERE ${this.id} = ${user.id}
-        `)
+        return sqlUsing(transaction)`UPDATE ${this} SET ${user} WHERE ${this.id} = ${user.id}`
     }
 
-    delete(user) {
-        return sql`DELETE FROM ${this} WHERE ${this.id} = ${user.id}`
+    delete(user, transaction) {
+        return sqlUsing(transaction)`DELETE FROM ${this} WHERE ${this.id} = ${user.id}`
     }
 }
 
@@ -81,7 +78,7 @@ export class User {
         this.phone_number = phone_number
         this.height_cm = height_cm
         this.weight_kg = weight_kg
-        // this.deleteUndefinedProperties() // not sure where this should be or is it needed
+        this.deleteUndefinedProperties()
     }
 
     static async authenticate(token) {
@@ -114,9 +111,9 @@ export class User {
         delete this.tokenHash
     }
 
-    async delete() {
+    async delete(transaction) {
         // await this.logoutAll() // trigger does this
-        await users.delete(this)
+        await users.delete(this, transaction)
     }
 
     fetch() {
@@ -140,6 +137,9 @@ export class User {
         const user = this.clone()
         delete user.id
         delete user.created_at
+        delete user.verified
+        delete user.verification_token
+        delete user.tokenHash
 
         return user
     }

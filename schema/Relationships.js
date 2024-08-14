@@ -14,28 +14,14 @@ class Relationships extends DbObject {
 
     // hinges on the assumption that the default relationship is carer but i think thats fine
     exists(carer_id, patient_id, ...types) {
-        // let whereTypes
-        
-        // if (types?.length)
-        //     whereTypes = new DbObject(`AND ${this.type.name} IN [${types.join()}]`)
-
-        // return sqlExists`
-        //     SELECT 1 FROM ${this} 
-        //     WHERE ${this.carer_id} = ${carer_id} AND ${this.patient_id} = ${patient_id} 
-        //     ${whereTypes}
-        // `
-    
         const request = createRequest()
-        let whereTypes = ''
+        request.parse`SELECT 1 FROM ${this} `
+        request.parse`WHERE ${this.carer_id} = ${carer_id} AND ${this.patient_id} = ${patient_id} `
 
         if (types?.length)
-            whereTypes = `AND ${this.type.name} IN [${request.addParams(types)}]`
+            request.parse`AND ${this.type} IN [${types}]`
 
-        return request.exists(r => `
-            SELECT 1 FROM ${this.name}
-            WHERE ${this.carer_id.name} = ${r.addParam(carer_id)} AND ${this.patient_id.name} = ${r.addParam(patient_id)}
-            ${whereTypes}
-        `)
+        return request.exists()
     }
 
     async add(carer_id, patient_id, type = RelationshipTypes.Owner, transaction) {
