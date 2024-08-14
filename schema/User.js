@@ -1,14 +1,14 @@
 import { User, Roles } from './Users.js'
-import Carer from './Carer.js'
-import Patient from './Patient.js'
-export { User, Carer, Patient }
+import Owner from './Owner.js'
+import Patient from './Owned.js'
+export { User, Owner as Carer, Patient }
 
 User.conversion = function({ role }) {
     if (role === undefined)
         return undefined
 
     return {
-        [Roles.Carer]: Carer,
+        [Roles.Carer]: Owner,
         [Roles.Patient]: Patient
     }[role] ?? User
 }

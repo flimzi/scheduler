@@ -3,6 +3,7 @@ import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from './AccessTokens.js'
+import Owned from './Owned.js'
 
 class Users extends DbObject {
     constructor() {
@@ -62,8 +63,8 @@ class Users extends DbObject {
 const users = new Users()
 
 export class Roles {
-    static Carer = 1
-    static Patient = 2
+    static Owner = 1
+    static Owned = 2
 }
 
 export class Genders {
@@ -94,7 +95,6 @@ export class User {
         const accessToken = await AccessToken.verify(token)
         const tokenHash = AccessToken.hash(token)
 
-        // this is honestly pretty bad because it runs for every authenticated request but there is no other way to check this as far as im concerned
         if (!await accessTokens.get(accessToken.id, tokenHash))
             return
 
@@ -111,7 +111,7 @@ export class User {
     }
 
     async logout() {
-        await accessTokens.remove(this.tokenHash)
+        await accessTokens.remove(this.id, this.tokenHash)
         delete this.tokenHash
     }
 
@@ -123,6 +123,10 @@ export class User {
     async delete(transaction) {
         // await this.logoutAll() // trigger does this
         await users.delete(this, transaction)
+    }
+
+    get full_name() {
+        return `${this.first_name} ${this.last_name}`
     }
 
     fetch() {
@@ -151,6 +155,10 @@ export class User {
         delete user.tokenHash
 
         return user
+    }
+
+    async addOwned(user) {
+        const model = await user.as(Owned).getUpdateModel()
     }
 
     static fake() {

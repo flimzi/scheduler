@@ -8,6 +8,9 @@ const pool = await mssql.connect({
     options: {
         encrypt: true,
         trustServerCertificate: true
+    },
+    pool: {
+        max: +process.env.DB_MAX_POOL || 10,
     }
 })
 

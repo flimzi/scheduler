@@ -13,6 +13,8 @@ export class Routes {
     
     static register = this.auth + AuthRoutes.register
     static login = this.auth + AuthRoutes.login
+    static logoutCurrent = this.auth + AuthRoutes.logout
+    static logoutAllCurrent = this.auth + AuthRoutes.logoutAll
     
     static user(id) { return Routes.currentUser + UserRoutes.user(id) }
     

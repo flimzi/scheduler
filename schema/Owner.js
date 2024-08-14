@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { ArgumentError, isStrongPassword, isValidEmail } from '../helpers.js'
 
-export default class Carer extends User {
+export default class Owner extends User {
     role = Roles.Carer
 
     sendVerificationEmail() {
@@ -35,7 +35,7 @@ export default class Carer extends User {
             return true
 
         // await sql`UPDATE ${users} SET ${users.verified} = 1 WHERE ${users.verification_token} = ${token}`
-        await sqlUpdate(users, { 'verified': 1 })`WHERE ${users.verification_token} = ${token}`
+        await sqlUpdate(users, { [users.verified.name]: 1 })`WHERE ${users.verification_token} = ${token}`
         return true
     }
 
@@ -47,21 +47,13 @@ export default class Carer extends User {
         return model
     }
 
-    async addPatient(patient) {
-        delete patient.email
-        delete patient.password
-        delete patient.verification_token
-        patient.first_name = patient.first_name?.toLettersOnly().capitalFirst()
-        patient.last_name = patient.last_name?.toLettersOnly().capitalFirst()
-        patient.role = Roles.Patient
-        patient.verified = true
-
+    async addOwned(owned) {
         await sqlTransaction(async t => {
-            patient.id = await users.add(patient, t)
-            await relationships.add(this.id, patient.id, RelationshipTypes.Owner, t)
+            owned.id = await users.add(owned, t)
+            await relationships.add(this.id, owned.id, RelationshipTypes.Owner, t)
         })
 
-        return patient
+        return owned
     }
 
     getInfo() {
@@ -91,16 +83,22 @@ export default class Carer extends User {
     }
 
     static fake() {
-        return User.fake().as(Carer)
+        return User.fake().as(Owner)
+    }
+
+    // both of those could probably go directly to user
+    // same with addOwned
+    deleteOwned(transaction) {
+        return sqlUsing(transaction)`
+            DELETE u FROM ${users} u
+            JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
+            WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
+        `
     }
  
     delete(transaction) {
         return sqlTransaction(async t => {
-            await sqlUsing(t)`
-                DELETE u FROM ${users} u
-                JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
-                WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
-            `
+            await this.deleteOwned()
             await super.delete(t)
         }, transaction)
     }
