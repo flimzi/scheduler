@@ -1,4 +1,4 @@
-import { createRequest, sqlInsert } from "../sql/helpers.js";
+import { createRequest, sqlInsert } from "../util/sql.js";
 import DbObject from "./DbObject.js";
 
 class Relationships extends DbObject {
@@ -48,9 +48,5 @@ class Relationships extends DbObject {
     // }
 }
 
-export const relationships = new Relationships()
-
-export class RelationshipTypes {
-    static Carer = 0
-    static Owner = 1
-}
+const relationships = new Relationships()
+export default relationships

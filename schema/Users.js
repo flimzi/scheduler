@@ -1,174 +1,40 @@
-import { sqlTransaction, sqlFirst, sqlInsert, sqlUsing } from '../sql/helpers.js'
-import DbObject from './DbObject.js'
-import { relationships, RelationshipTypes } from './Relationships.js'
-import { fakerPL as faker } from '@faker-js/faker'
-import accessTokens, { AccessToken } from './AccessTokens.js'
-import Carer from './Patient.js'
+import User from '../models/User.js'
+import { sqlExists } from '../util/sql.js'
+import { IdModelTable, Column } from './DbObject.js'
 
-class Users extends DbObject {
+class Users extends IdModelTable {
     constructor() {
-        super('users')
+        super('users', () => User)
     }
 
-    id = new DbObject('id')
-    role = new DbObject('role')
-    created_at = new DbObject('created_at')
-    email = new DbObject('email')
-    password = new DbObject('password')
-    first_name = new DbObject('first_name')
-    last_name = new DbObject('last_name')
-    access_token = new DbObject('access_token')
-    verified = new DbObject('verified')
-    verification_token = new DbObject('verification_token')
+    role = new Column('role')
+    created_at = new Column('created_at')
+    email = new Column('email')
+    password = new Column('password')
+    first_name = new Column('first_name')
+    last_name = new Column('last_name')
+    access_token = new Column('access_token')
+    verified = new Column('verified')
+    verification_token = new Column('verification_token')
 
-    get(id) {
-        if (id === undefined)
-            return undefined
-
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.then(User.from)
-    }
-
-    getByEmail(email) {
+    async getByEmail(email) {
         if (email === undefined)
             return undefined
 
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.then(User.from)
+        return this.sqlModel`SELECT * FROM ${this} WHERE ${this.email} = ${email}`
     }
 
-    getByVerificationToken(token) {
+    async getByVerificationToken(token) {
         if (token === undefined)
             return undefined
 
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.then(User.from)
+        return this.sqlModel`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`
     }
 
     async emailExists(email) {
-        return await this.getByEmail(email) !== undefined
-    }
-
-    add(user, transaction) {
-        return sqlInsert(this, user, transaction)
-    }
-
-    update(user, transaction) {
-        return sqlUsing(transaction)`UPDATE ${this} SET ${user} WHERE ${this.id} = ${user.id}`
-    }
-
-    delete(user, transaction) {
-        return sqlUsing(transaction)`DELETE FROM ${this} WHERE ${this.id} = ${user.id}`
+        return sqlExists`SELECT 1 FROM ${this} WHERE ${this.email} = ${email}`
     }
 }
 
 const users = new Users()
-
-export class Roles {
-    static Carer = 1
-    static Patient = 2
-}
-
-export class Genders {
-    static Male = 0
-    static Female = 0
-}
-
-export class User {
-    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg }) {
-        this.id = id
-        this.role = role
-        this.created_at = created_at // i need to cast this to javasript datetime
-        this.email = email
-        this.first_name = first_name
-        this.verification_token = verification_token
-        this.verified = verified || false
-        this.password = password
-        this.last_name = last_name
-        this.gender = gender
-        this.birth_date = birth_date
-        this.phone_number = phone_number
-        this.height_cm = height_cm
-        this.weight_kg = weight_kg
-        this.deleteUndefinedProperties()
-    }
-
-    static async authenticate(token) {
-        const accessToken = await AccessToken.verify(token)
-        const tokenHash = AccessToken.hash(token)
-
-        if (!await accessTokens.get(accessToken.id, tokenHash))
-            return
-
-        const user = User.from(accessToken)
-        user.tokenHash = tokenHash
-        return user
-    }
-
-    async generateAccessToken() {
-        const accessToken = new AccessToken(this)
-        const signed = accessToken.sign()
-        await sqlInsert(accessTokens, { user_id: this.id, hash: AccessToken.hash(signed) })
-        return signed
-    }
-
-    async logout() {
-        await accessTokens.remove(this.id, this.tokenHash)
-        delete this.tokenHash
-    }
-
-    async logoutAll() {
-        await accessTokens.removeForUser(this)
-        delete this.tokenHash
-    }
-
-    async delete(transaction) {
-        await users.delete(this, transaction)
-    }
-
-    // im not sure about if this shouldnt be get because why not really
-    full_name() {
-        return `${this.first_name} ${this.last_name}`
-    }
-
-    fetch() {
-        return users.get(this.id) 
-    }
-
-    clone() {
-        return new this.constructor(this)
-    }
-
-    getInfo() {
-        const user = this.clone()
-        delete user.password
-        delete user.verification_token
-        delete user.verified
-        delete user.tokenHash
-        return user
-    }
-
-    async getUpdateModel() {
-        const user = this.clone()
-        delete user.id
-        delete user.created_at
-        delete user.verified
-        delete user.verification_token
-        delete user.tokenHash
-
-        return user
-    }
-
-    static fake() {
-        return new User({
-            first_name: faker.person.firstName(),
-            last_name: faker.person.lastName(),
-            email: faker.internet.email(),
-            password: faker.internet.password(),
-            gender: Object.values(Genders).random(),
-            phone_number: faker.phone.number(),
-            birth_date: faker.date.birthdate(),
-            height_cm: faker.number.int(140, 210),
-            weight_kg: faker.number.int(40, 200),
-        })
-    }
-}
-
 export default users

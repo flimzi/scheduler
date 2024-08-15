@@ -1,4 +1,6 @@
-import users, { User, Roles } from './Users.js'
+import users from '../schema/Users.js'
+import { Roles } from '../util/definitions.js'
+import { User } from './users.js'
 
 export default class Patient extends User {
     role = Roles.Patient
@@ -21,5 +23,9 @@ export default class Patient extends User {
         model.verified = true
 
         return model
+    }
+
+    static fake() {
+        return super.fake().cast(Patient)
     }
 }

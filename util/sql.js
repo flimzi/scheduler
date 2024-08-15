@@ -51,7 +51,7 @@ mssql.Request.prototype.add = function(value) {
     if (value instanceof DbObject)
         return value.name
 
-    if (value.isString() || value.isNumber())
+    if (Object.isString(value) || Object.isNumber(value))
         return this.addParam(value)
 
     if (Array.isArray(value))
@@ -90,12 +90,12 @@ mssql.Request.prototype.sqlId = function(strings, ...values) {
 }
 
 mssql.Request.prototype.insert = function(table, obj) {
-    obj.deleteUndefinedProperties()
+    Object.deleteUndefinedProperties(obj) // not really needed but...
     return this.sqlId`INSERT INTO ${table} (${new DbObject(Object.keys(obj).join())}) VALUES (${Object.values(obj)}); SELECT SCOPE_IDENTITY() AS id`
 }
 
 mssql.Request.prototype.update = function(table, obj) {
-    obj.deleteUndefinedProperties()
+    Object.deleteUndefinedProperties(obj)
     this.parse`UPDATE ${table} SET ${obj}`
 
     return (strings, ...values) => {
@@ -124,3 +124,4 @@ export const sqlUsing = transaction => (strings, ...values) => createRequest(tra
 export const sqlInsert = (table, obj, transaction) => createRequest(transaction).insert(table, obj)
 export const sqlUpdate = (table, obj, transaction) => createRequest(transaction).update(table, obj)
 export const sqlDelete = (table, transaction) => createRequest(transaction).delete(table)
+export const sqlCast = type => (strings, ...values) => sqlFirst(strings, ...values).then(result => Object.cast(result, type))

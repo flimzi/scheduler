@@ -1,22 +1,23 @@
 import 'dotenv/config'
 import express from 'express'
-import mssql from 'mssql'
 import http from 'http'
-import WebSocket from 'ws'
+import mssql from 'mssql'
+import './util/extensions.js'
+import './util/conversions.js'
 
 import authRoutes from './routes/auth.js'
 import mainRoutes, { Routes } from './routes/main.js'
-import { Carer, User } from './schema/User.js'
-import { sqlTransaction, sqlUpdate } from './sql/helpers.js'
-import users from './schema/Users.js'
-import { ArgumentError, asyncHandler, Http } from './helpers.js'
 import userRoutes from './routes/user.js'
+import * as tests from './tests/auth.mjs'
+import { asyncHandler } from './util/helpers.js'
+import { Http } from './util/http.js'
+import Carer from './models/Carer.js'
 
 const app = express()
 const port = process.env.PORT || 3000
 
 app.use(express.json())
-app.use(express.static('public'))
+app.use(express.static(process.env.PUBLIC))
 
 app.use(Routes.auth, authRoutes)
 app.use(Routes.currentUser, userRoutes)
@@ -26,7 +27,7 @@ app.get('/', asyncHandler(async (req, res) => {
 
 }))
 
-app.use((req, res, next) => res.sendStatus(404))
+app.use((req, res, next) => res.send(Http.Status.NotFound))
 
 app.use((err, req, res, next) => {
     console.error(err)
@@ -43,10 +44,8 @@ app.use((err, req, res, next) => {
 })
 
 const server = http.createServer(app)
-const wss = new WebSocket.Server({ server })
 
 server.listen(port, async () => {
     console.log(`Server running on port ${port}`)
-
-    // run sample tests
+    await tests.carerActions1()
 })

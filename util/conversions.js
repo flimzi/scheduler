@@ -1,7 +1,5 @@
-import { User, Roles } from './Users.js'
-import Carer from './Carer.js'
-import Patient from './Patient.js'
-export { User, Carer, Patient }
+import { User, Carer, Patient } from '../models/users.js'
+import { Roles } from './definitions.js'
 
 User.conversion = function({ role }) {
     switch (role) {
@@ -14,8 +12,4 @@ User.conversion = function({ role }) {
     }
 
     return User
-}
-
-User.from = function(obj) {
-    return obj?.convert(User.conversion)
 }

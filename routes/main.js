@@ -1,5 +1,6 @@
 import express from 'express'
-import { asyncHandler, Http } from '../helpers.js'
+import { Http } from '../util/http.js'
+import { asyncHandler } from '../util/helpers.js'
 import strings from '../resources/strings.en.js'
 import eventStream from '../middleware/eventStream.js'
 import { AuthRoutes } from './auth.js'
@@ -11,10 +12,10 @@ export class Routes {
     static auth = this.api + '/auth'
     static currentUser = this.api + '/user'
     
-    static register = this.auth + AuthRoutes.register
-    static login = this.auth + AuthRoutes.login
-    static logoutCurrent = this.auth + AuthRoutes.logout
-    static logoutAllCurrent = this.auth + AuthRoutes.logoutAll
+    static get register() { return this.auth + AuthRoutes.register }
+    static get login() { return this.auth + AuthRoutes.login }
+    static get logoutCurrent() { return this.auth + AuthRoutes.logout }
+    static get logoutAllCurrent() { return this.auth + AuthRoutes.logoutAll }
     
     static user(id) { return Routes.currentUser + UserRoutes.user(id) }
     

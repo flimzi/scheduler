@@ -1,11 +1,13 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
+import QRCode from 'qrcode'
 import users from '../schema/Users.js'
 import { authenticate, authorizeCarerByRouteId } from '../middleware/auth.js'
 import { debounceSecond } from '../middleware/debounce.js'
-import QRCode from 'qrcode'
-import { asyncHandler } from '../helpers.js'
-import { User, Carer } from '../schema/User.js'
+import { asyncHandler } from '../util/helpers.js'
+import { User, Carer } from '../models/users.js'
+import { Routes } from './main.js'
+import { Http } from '../util/http.js'
 const router = express.Router()
 
 export class AuthRoutes {
@@ -18,23 +20,13 @@ export class AuthRoutes {
 }
 
 router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
-    await req.body.as(Carer).register()
-    return res.sendStatus(201)
+    const { id } = await req.body.cast(Carer).register()
+    return res.status(201).location(Routes.user(id)).send(id + '')
 }))
 
 router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    const user = await users.getByEmail(email)
-
-    if (!user?.verified)
-        return res.send(401)
-
-    if (!await bcrypt.compare(password, user.password))
-        return res.send(401)
-
-    res.send(await user.generateAccessToken())
+    res.send(await Carer.login(req.body) ?? Http.Status.Unauthorized)
 }))
-
 
 router.get(AuthRoutes.qr(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
     res.json(await QRCode.toDataURL(await req.targetUser.generateAccessToken()))

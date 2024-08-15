@@ -1,7 +1,9 @@
-import { Http } from '../helpers.js'
-import users, { User } from '../schema/Users.js'
-import { asyncHandler } from '../helpers.js'
-import { relationships, RelationshipTypes } from '../schema/Relationships.js'
+import { User } from '../models/users.js'
+import relationships from '../schema/Relationships.js'
+import users from '../schema/Users.js'
+import { RelationshipTypes } from '../util/definitions.js'
+import { asyncHandler } from '../util/helpers.js'
+import { Http } from '../util/http.js'
 
 export const authenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers['authorization']

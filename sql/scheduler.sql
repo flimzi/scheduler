@@ -42,8 +42,7 @@ CREATE TABLE [events] (
 
 CREATE TABLE [access_tokens] (
 	[user_id] int NOT NULL,
-	[hash] nvarchar(450) NOT NULL,
-	PRIMARY KEY ([user_id])
+	[hash] nvarchar(450) NOT NULL
 )
 
 ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([primary_id]) REFERENCES [users]([id]);

@@ -1,9 +1,10 @@
 import express from 'express'
 import { authenticate, authorizeUser, authorizeCarerByRouteId } from '../middleware/auth.js'
-import { asyncHandler, Http } from '../helpers.js'
+import { asyncHandler } from '../util/helpers.js'
+import { Http } from '../util/http.js'
 import { Routes } from './main.js'
 import users from '../schema/Users.js'
-import { User, Carer, Patient } from '../schema/User.js'
+import { User, Carer, Patient } from '../models/users.js'
 const router = express.Router()
 
 export class UserRoutes {

@@ -1,11 +1,12 @@
-import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
-import users, { Roles, User } from './Users.js'
-import Patient from './Patient.js'
+import crypto from 'crypto'
 import transporter from '../config/mail.js'
-import { sqlTransaction, sqlUpdate } from '../sql/helpers.js'
-import { relationships, RelationshipTypes } from './Relationships.js'
-import { ArgumentError, isStrongPassword, isValidEmail } from '../helpers.js'
+import relationships from '../schema/Relationships.js'
+import users from '../schema/Users.js'
+import { RelationshipTypes, Roles } from '../util/definitions.js'
+import { isStrongPassword, isValidEmail } from '../util/helpers.js'
+import { sqlTransaction, sqlUpdate } from '../util/sql.js'
+import { Patient, User } from './users.js'
 
 export default class Carer extends User {
     role = Roles.Carer
@@ -47,12 +48,21 @@ export default class Carer extends User {
         return carer
     }
 
+    static async login({ email, password }) {
+        const user = await users.getByEmail(email)
+
+        if (!user?.verified || !await bcrypt.compare(password, user.password))
+            return undefined
+    
+        return user.generateAccessToken()
+    }
+
     getInfo() {
         return super.getInfo()
     }
 
     async getUpdateModel() {
-        const model = super.getUpdateModel()
+        const model = await super.getUpdateModel()
 
         if (!isValidEmail(model.email))
             throw new ArgumentError(`${model.email} is not a valid email`)
@@ -74,7 +84,7 @@ export default class Carer extends User {
     }
 
     async addPatient(user, transaction) {
-        const patient = await user.as(Patient).getUpdateModel()
+        const patient = await user.cast(Patient).getUpdateModel()
 
         await sqlTransaction(async t => {
             patient.id = await users.add(patient, t)
@@ -82,9 +92,5 @@ export default class Carer extends User {
         }, transaction)
 
         return patient
-    }
-
-    static fake() {
-        return User.fake().as(Carer)
     }
 }

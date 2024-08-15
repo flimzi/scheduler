@@ -2,28 +2,44 @@ CREATE OR ALTER TRIGGER trg_delete_user
 ON users
 INSTEAD OF DELETE
 AS BEGIN
+    BEGIN TRANSACTION
+
+    DECLARE @OwnedUserIds TABLE (id INT)
+    INSERT INTO @OwnedUserIds (id)
+    SELECT u.id FROM users u
+    JOIN relationships r ON u.id = r.secondary_id
+    WHERE r.type = 1 AND r.primary_id IN (SELECT id FROM DELETED);
+
     -- delete orphaned relationships
     DELETE FROM relationships 
     WHERE primary_id IN (SELECT id FROM DELETED)
     OR secondary_id IN (SELECT id FROM DELETED);
 
+    -- delete events
+    DELETE FROM events
+    WHERE giver_id IN (SELECT id FROM DELETED)
+    OR receiver_id IN (SELECT id FROM DELETED);
+
     -- delete login tokens
     DELETE FROM access_tokens
     WHERE user_id IN (SELECT id FROM DELETED);
 
+    -- delete owners and owned
     DELETE FROM users 
-    WHERE id IN (SELECT id FROM DELETED);
+    WHERE id IN (SELECT id FROM DELETED) OR id IN (SELECT id FROM @OwnedUserIds);
+
+    COMMIT TRANSACTION
 END;
 
-CREATE OR ALTER TRIGGER trg_delete_relationship
-ON relationships
-INSTEAD OF DELETE
+CREATE OR ALTER TRIGGER trg_update_event
+ON events
+AFTER UPDATE
 AS BEGIN
-    -- delete owned users
-    DELETE u FROM users u
-    JOIN relationships r ON u.id = r.secondary_id
-    WHERE r.type = 0 AND r.id IN (SELECT id FROM DELETED);
+    BEGIN TRANSACTION
 
-    DELETE FROM relationships
-    WHERE id IN (SELECT id FROM DELETED);
+    UPDATE events SET modified_at = GETDATE()
+    FROM events
+    JOIN INSERTED i ON events.id = i.id
+
+    COMMIT TRANSACTION
 END;
