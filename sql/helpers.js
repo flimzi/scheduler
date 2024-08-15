@@ -23,7 +23,7 @@ export async function sqlTransaction(operations, parentTransaction) {
 mssql.Request.prototype.command = ''
 mssql.Request.prototype.paramCount = 0
 
-mssql.Request.prototype.run = function(command = this.command) {
+mssql.Request.prototype.run = async function(command = this.command) {
     return this.query(command.removeNewline()).catch(e => {
         e.command = command
         throw e

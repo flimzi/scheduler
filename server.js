@@ -1,8 +1,11 @@
 import 'dotenv/config'
 import express from 'express'
+import mssql from 'mssql'
+import http from 'http'
+import WebSocket from 'ws'
+
 import authRoutes from './routes/auth.js'
 import mainRoutes, { Routes } from './routes/main.js'
-import mssql from 'mssql'
 import { Carer, User } from './schema/User.js'
 import { sqlTransaction, sqlUpdate } from './sql/helpers.js'
 import users from './schema/Users.js'
@@ -20,22 +23,7 @@ app.use(Routes.currentUser, userRoutes)
 app.use('', mainRoutes)
 
 app.get('/', asyncHandler(async (req, res) => {
-    let html = `<a href="${process.env.WEBSITE}">forwards</a>`
-    html += '<br>'
-    html += '<a href="zwardon://open.app/verification?token=123123123">forwards</a>'
 
-    await sqlTransaction(async t => {
-        const carer = Carer.fake()
-        delete carer.id
-        delete carer.created_at
-        const carer2 = Carer.fake()
-        delete carer2.id
-        delete carer2.created_at
-        await t.sql`test test test`
-        await t.sqlInsert(users, carer)
-    })
-
-    res.send(html)
 }))
 
 app.use((req, res, next) => res.sendStatus(404))
@@ -54,13 +42,11 @@ app.use((err, req, res, next) => {
     res.send(Http.Status.ServerError)
 })
 
-app.listen(port, async () => {
+const server = http.createServer(app)
+const wss = new WebSocket.Server({ server })
+
+server.listen(port, async () => {
     console.log(`Server running on port ${port}`)
 
-    // const x = new User({ id: 100, role: 100, first_name: 'abcdef' })
-    // const y = x.clone()
-    // y.first_name = 'bbbbbb'
-
-    const x = User.fake().getUpdateModel()
-    await sqlUpdate(users, x)`WHERE ${users.id} = ${7}`
+    // run sample tests
 })

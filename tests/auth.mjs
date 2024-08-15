@@ -9,7 +9,7 @@ function baseUrl(route) {
 }
 
 async function registerCarer() {
-    const carer = Owner.fake()
+    const carer = Carer.fake()
     const response = await Http.postJson(baseUrl(Routes.register), carer)
     assert(response.status, Http.Status.Created)
     console.log(`creating ${carer.full_name()}`)
@@ -30,50 +30,53 @@ async function removeUserId(user) {
     return user
 }
 
-async function loginOwner(owner) {
-    const response = await Http.postJson(baseUrl(Routes.login), { email: owner.email, password: owner.password })
+async function loginCarer(carer) {
+    const response = await Http.postJson(baseUrl(Routes.login), { email: carer.email, password: carer.password })
     assert(response.ok)
-    owner.accessToken = await response.text()
-    console.log(`logging in ${owner.full_name()}`)
-    return owner
+    carer.accessToken = await response.text()
+    console.log(`logging in ${carer.full_name()}`)
+    return carer
 }
 
-async function logoutOwner(owner) {
-    const response = await Http.fetch(baseUrl(Routes.logoutCurrent), {}, owner.accessToken)
+async function logoutCarer(carer) {
+    const response = await Http.fetch(baseUrl(Routes.logoutCurrent), {}, carer.accessToken)
     assert(response.ok)
-    console.log(`logging out ${owner.full_name()}`)
-    delete owner.accessToken
-    return owner
+    console.log(`logging out ${carer.full_name()}`)
+    delete carer.accessToken
+    return carer
 }
 
-const ownerSequence1 = () => registerOwner().then(loginOwner).then(logoutOwner).then(loginOwner).then(removeUser)
+const carerSequence1 = () => registerCarer().then(loginCarer).then(logoutCarer).then(loginCarer).then(removeUser)
 
 // for (let i = 0; i < 100; i++)
-//     ownerSequence1()
+//     carerSequence1()
 
-const owners = []
+const carers = []
 
-async function ownerActions1() {
-    for (let i = 0; i < 100; i++)
-        owners.push(await registerOwner())
-    
-    for (const owner of owners) {
-        await loginOwner(owner)
+async function carerActions1() {
+    for (let i = 0; i < 100; i++) {
+        const carer = await registerCarer()
+        carers[carer.id] = carer
     }
     
-    for (const owner of owners) {
-        await loginOwner(owner)
+    for (const carer of carers) {
+        await loginCarer(carer)
     }
     
-    for (const owner of owners) {
-        await logoutOwner(owner)
+    for (const carer of carers) {
+        await loginCarer(carer)
     }
     
-    for (const owner of owners) {
-        await loginOwner(owner)
+    for (const carer of carers) {
+        await logoutCarer(carer)
     }
     
-    for (const owner of owners) {
-        await removeUser(owner) // also remove from owners
+    for (const carer of carers) {
+        await loginCarer(carer)
+    }
+    
+    for (const carer of carers) {
+        await removeUser(carer)
+        delete carers[carer.id]
     }
 }

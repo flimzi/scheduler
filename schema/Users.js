@@ -156,15 +156,6 @@ export class User {
         return user
     }
 
-    // this is in trigger
-    // deleteOwned(transaction) {
-    //     return sqlUsing(transaction)`
-    //         DELETE u FROM ${users} u
-    //         JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
-    //         WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
-    //     `
-    // }
-
     static fake() {
         return new User({
             first_name: faker.person.firstName(),
