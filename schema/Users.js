@@ -1,9 +1,9 @@
-import { createRequest, sql, sqlExists, sqlFirst, sqlInsert, sqlUsing } from '../sql/helpers.js'
+import { sqlTransaction, sqlFirst, sqlInsert, sqlUsing } from '../sql/helpers.js'
 import DbObject from './DbObject.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from './AccessTokens.js'
-import Owned from './Owned.js'
+import Carer from './Patient.js'
 
 class Users extends DbObject {
     constructor() {
@@ -25,22 +25,21 @@ class Users extends DbObject {
         if (id === undefined)
             return undefined
 
-        // should this be .then(User.from)? i dont really know where or if there is a limit to the conversion possibilities
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.as(User) 
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`.then(User.from)
     }
 
     getByEmail(email) {
         if (email === undefined)
             return undefined
 
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.as(User)
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.email} = ${email}`.then(User.from)
     }
 
     getByVerificationToken(token) {
         if (token === undefined)
             return undefined
 
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.as(User)
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`.then(User.from)
     }
 
     async emailExists(email) {
@@ -63,8 +62,8 @@ class Users extends DbObject {
 const users = new Users()
 
 export class Roles {
-    static Owner = 1
-    static Owned = 2
+    static Carer = 1
+    static Patient = 2
 }
 
 export class Genders {
@@ -98,7 +97,7 @@ export class User {
         if (!await accessTokens.get(accessToken.id, tokenHash))
             return
 
-        const user = accessToken.convert(this.conversion)
+        const user = User.from(accessToken)
         user.tokenHash = tokenHash
         return user
     }
@@ -121,11 +120,11 @@ export class User {
     }
 
     async delete(transaction) {
-        // await this.logoutAll() // trigger does this
         await users.delete(this, transaction)
     }
 
-    get full_name() {
+    // im not sure about if this shouldnt be get because why not really
+    full_name() {
         return `${this.first_name} ${this.last_name}`
     }
 
@@ -146,7 +145,7 @@ export class User {
         return user
     }
 
-    getUpdateModel() {
+    async getUpdateModel() {
         const user = this.clone()
         delete user.id
         delete user.created_at
@@ -157,9 +156,14 @@ export class User {
         return user
     }
 
-    async addOwned(user) {
-        const model = await user.as(Owned).getUpdateModel()
-    }
+    // this is in trigger
+    // deleteOwned(transaction) {
+    //     return sqlUsing(transaction)`
+    //         DELETE u FROM ${users} u
+    //         JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
+    //         WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
+    //     `
+    // }
 
     static fake() {
         return new User({

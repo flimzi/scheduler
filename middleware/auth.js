@@ -1,7 +1,7 @@
 import { Http } from '../helpers.js'
 import users, { User } from '../schema/Users.js'
 import { asyncHandler } from '../helpers.js'
-import { relationships } from '../schema/Relationships.js'
+import { relationships, RelationshipTypes } from '../schema/Relationships.js'
 
 export const authenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers['authorization']
@@ -36,18 +36,19 @@ export const authorizeUser = type => (req, res, next) => {
     })
 }
 
-export const authorizeCarerByRouteParameter = paramName => (req, res, next) => {
+export const authorizeCarerByRouteParameter = (paramName, ...relationshipTypes) => (req, res, next) => {
     authenticate(req, res, async () => {
         req.targetUser = await users.get(req.params[paramName])
 
         if (!req.targetUser)
             return res.send(Http.Status.NotFound)
 
-        if (req.user.id !== req.params[paramName] && !relationships.exists(req.user.id, req.targetUser.id))
+        if (req.user.id !== req.params[paramName] && !relationships.exists(req.user.id, req.targetUser.id, ...relationshipTypes))
             return res.send(Http.Status.Unauthorized)
 
         next()
     })
 }
 
-export const authorizeCarerByRouteId = authorizeCarerByRouteParameter('id')
+export const authorizeCarerByRouteId = authorizeCarerByRouteParameter('id', RelationshipTypes.Owner, RelationshipTypes.Carer)
+export const authorizeOwnerByRouteId = authorizeCarerByRouteParameter('id', RelationshipTypes.Owner)

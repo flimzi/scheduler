@@ -18,8 +18,7 @@ export class AuthRoutes {
 }
 
 router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
-    const carer = req.body.as(Carer)
-    await carer.register()
+    await req.body.as(Carer).register()
     return res.sendStatus(201)
 }))
 

@@ -1,4 +1,4 @@
-import { createRequest, sqlExists, sqlFirst, sqlInsert } from "../sql/helpers.js";
+import { createRequest, sqlInsert } from "../sql/helpers.js";
 import DbObject from "./DbObject.js";
 
 class Relationships extends DbObject {
@@ -7,15 +7,14 @@ class Relationships extends DbObject {
     }
 
     id = new DbObject('id')
-    carer_id = new DbObject('carer_id')
-    patient_id = new DbObject('patient_id')
+    primary_id = new DbObject('primary_id')
+    secondary_id = new DbObject('secondary_id')
     type = new DbObject('type')
 
-    // hinges on the assumption that the default relationship is carer but i think thats fine
-    exists(carer_id, patient_id, ...types) {
+    exists(primary, secondary, ...types) {
         const request = createRequest()
         request.parse`SELECT 1 FROM ${this}`
-        request.parse`WHERE ${this.carer_id} = ${carer_id} AND ${this.patient_id} = ${patient_id}`
+        request.parse`WHERE ${this.primary_id} = ${primary.id} AND ${this.secondary_id} = ${secondary.id}`
 
         if (types?.length)
             request.parse`AND ${this.type} IN [${types}]`
@@ -23,9 +22,9 @@ class Relationships extends DbObject {
         return request.exists()
     }
 
-    async add(carer_id, patient_id, type = RelationshipTypes.Owner, transaction) {
-        if (!await this.exists(carer_id, patient_id))
-            return sqlInsert(this, { carer_id, patient_id, type }, transaction)
+    async add(primary, secondary, type = RelationshipTypes.Owner, transaction) {
+        if (!await this.exists(primary, secondary))
+            return sqlInsert(this, { primary_id: primary.id, secondary_id: secondary.id, type }, transaction)
     }
 
     // not sure yet how to do this

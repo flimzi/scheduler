@@ -1,6 +1,5 @@
 import 'dotenv/config'
 import { Carer } from '../schema/User.js'
-import { Genders } from '../schema/Users.js'
 import { assert, Http } from '../helpers.js'
 import { Routes } from '../routes/main.js'
 
@@ -10,71 +9,71 @@ function baseUrl(route) {
 }
 
 async function registerCarer() {
-    const carer = Carer.fake()
+    const carer = Owner.fake()
     const response = await Http.postJson(baseUrl(Routes.register), carer)
     assert(response.status, Http.Status.Created)
-    console.log(`creating ${carer.full_name}`)
+    console.log(`creating ${carer.full_name()}`)
     return carer
 }
 
 async function removeUser(user) {
     const response = await Http.delete(baseUrl(Routes.currentUser), user.accessToken)
-    console.log(`removing ${user.full_name}`)
+    console.log(`removing ${user.full_name()}`)
     assert(response.ok)
     return user
 }
 
 async function removeUserId(user) {
     const response = await Http.delete(baseUrl(Routes.user(user.id)), user.accessToken)
-    console.log(`removing ${user.full_name}`)
+    console.log(`removing ${user.full_name()}`)
     assert(response.ok)
     return user
 }
 
-async function loginCarer(carer) {
-    const response = await Http.postJson(baseUrl(Routes.login), { email: carer.email, password: carer.password })
+async function loginOwner(owner) {
+    const response = await Http.postJson(baseUrl(Routes.login), { email: owner.email, password: owner.password })
     assert(response.ok)
-    carer.accessToken = await response.text()
-    console.log(`logging in ${carer.full_name}`)
-    return carer
+    owner.accessToken = await response.text()
+    console.log(`logging in ${owner.full_name()}`)
+    return owner
 }
 
-async function logoutCarer(carer) {
-    const response = await Http.fetch(baseUrl(Routes.logoutCurrent), {}, carer.accessToken)
+async function logoutOwner(owner) {
+    const response = await Http.fetch(baseUrl(Routes.logoutCurrent), {}, owner.accessToken)
     assert(response.ok)
-    console.log(`logging out ${carer.full_name}`)
-    delete carer.accessToken
-    return carer
+    console.log(`logging out ${owner.full_name()}`)
+    delete owner.accessToken
+    return owner
 }
 
-const carerSequence1 = () => registerCarer().then(loginCarer).then(logoutCarer).then(loginCarer).then(removeUser)
+const ownerSequence1 = () => registerOwner().then(loginOwner).then(logoutOwner).then(loginOwner).then(removeUser)
 
 // for (let i = 0; i < 100; i++)
-//     carerSequence1()
+//     ownerSequence1()
 
-const carers = []
+const owners = []
 
-async function carerActions1() {
+async function ownerActions1() {
     for (let i = 0; i < 100; i++)
-        carers.push(await registerCarer())
+        owners.push(await registerOwner())
     
-    for (const carer of carers) {
-        await loginCarer(carer)
+    for (const owner of owners) {
+        await loginOwner(owner)
     }
     
-    for (const carer of carers) {
-        await loginCarer(carer)
+    for (const owner of owners) {
+        await loginOwner(owner)
     }
     
-    for (const carer of carers) {
-        await logoutCarer(carer)
+    for (const owner of owners) {
+        await logoutOwner(owner)
     }
     
-    for (const carer of carers) {
-        await loginCarer(carer)
+    for (const owner of owners) {
+        await loginOwner(owner)
     }
     
-    for (const carer of carers) {
-        await removeUser(carer) // also remove from carers
+    for (const owner of owners) {
+        await removeUser(owner) // also remove from owners
     }
 }

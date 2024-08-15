@@ -1,8 +1,14 @@
-import { relationships, RelationshipTypes } from './Relationships.js'
 import users, { User, Roles } from './Users.js'
 
-export default class Owned extends User {
-    role = Roles.Owned
+export default class Patient extends User {
+    role = Roles.Patient
+
+    static async get(id) {
+        const user = await users.get(id)
+
+        if (user instanceof Patient)
+            return user
+    }
 
     async getUpdateModel() {
         const model = super.getUpdateModel()

@@ -1,12 +1,13 @@
-import users, { Roles, User } from './Users.js'
-import transporter from '../config/mail.js'
-import { sql, sqlDelete, sqlInsert, sqlTransaction, sqlUpdate, sqlUsing } from '../sql/helpers.js'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
+import users, { Roles, User } from './Users.js'
+import Patient from './Patient.js'
+import transporter from '../config/mail.js'
+import { sqlTransaction, sqlUpdate } from '../sql/helpers.js'
 import { relationships, RelationshipTypes } from './Relationships.js'
 import { ArgumentError, isStrongPassword, isValidEmail } from '../helpers.js'
 
-export default class Owner extends User {
+export default class Carer extends User {
     role = Roles.Carer
 
     sendVerificationEmail() {
@@ -34,26 +35,16 @@ export default class Owner extends User {
         if (user.verified)
             return true
 
-        // await sql`UPDATE ${users} SET ${users.verified} = 1 WHERE ${users.verification_token} = ${token}`
         await sqlUpdate(users, { [users.verified.name]: 1 })`WHERE ${users.verification_token} = ${token}`
         return true
     }
 
     async register() {
-        const model = await this.getUpdateModel()
-        model.id = await users.add(model)
-        await model.sendVerificationEmail()
+        const carer = await this.getUpdateModel()
+        carer.id = await users.add(carer)
+        await carer.sendVerificationEmail()
 
-        return model
-    }
-
-    async addOwned(owned) {
-        await sqlTransaction(async t => {
-            owned.id = await users.add(owned, t)
-            await relationships.add(this.id, owned.id, RelationshipTypes.Owner, t)
-        })
-
-        return owned
+        return carer
     }
 
     getInfo() {
@@ -82,24 +73,18 @@ export default class Owner extends User {
         return model
     }
 
-    static fake() {
-        return User.fake().as(Owner)
+    async addPatient(user, transaction) {
+        const patient = await user.as(Patient).getUpdateModel()
+
+        await sqlTransaction(async t => {
+            patient.id = await users.add(patient, t)
+            await relationships.add(this, patient, RelationshipTypes.Owner, t)
+        }, transaction)
+
+        return patient
     }
 
-    // both of those could probably go directly to user
-    // same with addOwned
-    deleteOwned(transaction) {
-        return sqlUsing(transaction)`
-            DELETE u FROM ${users} u
-            JOIN ${relationships} r ON u.${users.id} = r.${relationships.patient_id}
-            WHERE ${relationships.carer_id} = ${this.id} AND ${relationships.type} = ${RelationshipTypes.Owner}
-        `
-    }
- 
-    delete(transaction) {
-        return sqlTransaction(async t => {
-            await this.deleteOwned()
-            await super.delete(t)
-        }, transaction)
+    static fake() {
+        return User.fake().as(Carer)
     }
 }

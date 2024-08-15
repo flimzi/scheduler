@@ -23,7 +23,7 @@ router.delete(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res
 }))
 
 router.post(UserRoutes.currentUser, authorizeUser(Carer), asyncHandler(async (req, res) => {
-    const { id } = await req.user.addOwned(req.body)
+    const { id } = await req.user.addPatient(req.body)
     res.status(Http.Status.Created).location(Routes.user(id)).send(id + '')
 }))
 
