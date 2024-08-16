@@ -3,7 +3,8 @@ import { fakerPL as faker } from '@faker-js/faker'
 import { Genders } from '../util/definitions.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
 import users from '../schema/Users.js'
-import { sqlInsert } from '../util/sql.js'
+import { sql, sqlInsert } from '../util/sql.js'
+import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg }) {
@@ -40,16 +41,16 @@ export default class User extends Model {
         delete this.tokenHash
     }
 
+    async fetch() {
+        return users.get(this.id) 
+    }
+
     async delete(transaction) {
         await users.delete(this, transaction)
     }
 
     full_name() {
         return `${this.first_name} ${this.last_name}`
-    }
-
-    fetch() {
-        return users.get(this.id) 
     }
     
     getInfo() {
@@ -84,5 +85,21 @@ export default class User extends Model {
             height_cm: faker.number.int(140, 210),
             weight_kg: faker.number.int(40, 200),
         })
+    }
+
+    async getPrimaries(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getPrimaries(this.id, relationshipTypes)}`
+    }
+
+    async getSecondaries(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getSecondaries(this.id, relationshipTypes)}`
+    }
+
+    async getReceivedEvents({ giverId, eventType, status }) {
+        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, eventType, status})}`
+    }
+
+    async getGivenEvents({ receiverId, eventType, status }) {
+        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, eventType, status })}`
     }
 }

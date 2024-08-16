@@ -38,6 +38,7 @@ export const authorizeUser = type => (req, res, next) => {
     })
 }
 
+// im yet to learn the sacred knowledge of handling async errors in nested middleware, asyncHandler does nothing here
 export const authorizeCarerByRouteParameter = (paramName, ...relationshipTypes) => (req, res, next) => {
     authenticate(req, res, async () => {
         req.targetUser = await users.get(req.params[paramName])

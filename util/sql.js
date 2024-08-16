@@ -1,23 +1,20 @@
 import mssql from 'mssql'
 import pool from '../config/db.js'
-import DbObject from '../schema/DbObject.js'
+import DbObject, { DbFunction } from '../schema/DbObject.js'
 
 export const createTransaction = () => new mssql.Transaction(pool)
 export const createRequest = transaction => new mssql.Request(transaction ?? pool)
 
 export async function sqlTransaction(operations, parentTransaction) {
     const transaction = parentTransaction ?? createTransaction()
-
-    if (!parentTransaction)
-        await transaction.begin()
+    !parentTransaction && await transaction.begin()
 
     await operations(transaction).catch(async e => {
         await transaction.rollback()
         throw e
     })
 
-    if (!parentTransaction)
-        await transaction.commit()
+    !parentTransaction && await transaction.commit()
 }
 
 mssql.Request.prototype.command = ''
@@ -31,6 +28,24 @@ mssql.Request.prototype.run = async function(command = this.command) {
 }
 
 mssql.Request.prototype.addParam = function(value) {
+    if (value === undefined)
+        return ''
+
+    if (value === null)
+        return 'NULL'
+
+    if (value instanceof DbFunction)
+        return `${value.name}(${this.addParams(value.values)})`
+
+    if (value instanceof DbObject)
+        return value.name
+
+    if (Array.isArray(value))
+        return this.addParams(value)
+
+    if (Object.isObject(value))
+        return this.addList(value)
+
     const name = this.paramCount++
     this.input(name.toString(), value)
     return '@' + name
@@ -44,20 +59,9 @@ mssql.Request.prototype.addList = function(obj, delimiter = ',') {
     return Object.entries(obj).map(([col, val]) => `${col} = ${this.addParam(val)}`).join(delimiter)
 }
 
-mssql.Request.prototype.add = function(value) {
-    if (value === undefined)
-        return ''
-
-    if (value instanceof DbObject)
-        return value.name
-
-    if (Object.isString(value) || Object.isNumber(value))
-        return this.addParam(value)
-
-    if (Array.isArray(value))
-        return this.addParams(value)
-
-    return this.addList(value)
+mssql.Request.prototype.parse = function(strings, ...values) {
+    this.command += ' ' + strings.reduce((result, string, i) => result + string + this.addParam(values[i]), '')
+    return this
 }
 
 mssql.Request.prototype.first = function() {
@@ -68,17 +72,12 @@ mssql.Request.prototype.exists = function() {
     return this.first().then(r => r !== undefined)
 }
 
-mssql.Request.prototype.parse = function(strings, ...values) {
-    this.command += ' ' + strings.reduce((result, string, i) => result + string + this.add(values[i]), ' ')
-    return this
-}
-
 mssql.Request.prototype.sql = function(strings, ...values) {
-    return this.parse(strings, ...values).run()
+    return this.parse(strings, ...values).run().then(r => r?.recordset)
 }
 
 mssql.Request.prototype.sqlFirst = function(strings, ...values) {
-    return this.sql(strings, ...values).then(r => r.recordset[0])
+    return this.sql(strings, ...values).then(r => r[0])
 }
 
 mssql.Request.prototype.sqlExists = async function(strings, ...values) {

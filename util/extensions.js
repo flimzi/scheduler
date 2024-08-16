@@ -37,9 +37,11 @@ Object.random = function(obj) {
     return Object.values(obj).random()
 }
 
-Object.isFunction = obj => typeof obj === 'function'
-Object.isString = obj => typeof obj === 'string' || obj instanceof String
-Object.isNumber = obj => typeof obj === 'number'
+Object.isNullOrUndefined = value => value === undefined || value === null
+Object.isObject = value => typeof value === 'object'
+Object.isFunction = value => typeof value === 'function'
+Object.isString = value => typeof value === 'string'
+Object.isNumber = value => typeof value === 'number'
 
 Object.isType = function(obj, type) {
     switch (type) {

@@ -1,12 +1,10 @@
-import DbObject from "./DbObject.js"
-import Model from "./Model.js"
+import { IdModelTable } from "./DbObject.js"
 
-class Events extends DbObject {
+class Events extends IdModelTable {
     constructor() {
         super('events')
     }
 
-    id = new DbObject('id')
     type = new DbObject('type')
     status = new DbObject('status')
     giver_id = new DbObject('giver_id')

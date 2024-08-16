@@ -12,6 +12,9 @@ import * as tests from './tests/auth.mjs'
 import { asyncHandler } from './util/helpers.js'
 import { Http } from './util/http.js'
 import Carer from './models/Carer.js'
+import User from './models/User.js'
+import { RelationshipTypes } from './util/definitions.js'
+import { ArgumentError } from './util/errors.js'
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -27,8 +30,6 @@ app.get('/', asyncHandler(async (req, res) => {
 
 }))
 
-app.use((req, res, next) => res.send(Http.Status.NotFound))
-
 app.use((err, req, res, next) => {
     console.error(err)
 
@@ -43,9 +44,15 @@ app.use((err, req, res, next) => {
     res.send(Http.Status.ServerError)
 })
 
+app.use((req, res, next) => res.send(Http.Status.NotFound))
+
 const server = http.createServer(app)
+export default server
 
 server.listen(port, async () => {
     console.log(`Server running on port ${port}`)
-    await tests.carerActions1()
+
+    // const x = await new User({ id: 1603 }).getSecondaries(RelationshipTypes.Owner)
+    // debugger
+    // await tests.carerActions1()
 })

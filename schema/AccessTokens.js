@@ -1,15 +1,15 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import DbObject from "./DbObject.js";
+import { DbTable, DbColumn } from "./DbObject.js";
 import { sqlDelete, sqlFirst } from '../util/sql.js';
 
-class AccessTokens extends DbObject {
+class AccessTokens extends DbTable {
     constructor() {
         super('access_tokens')
     }
 
-    user_id = new DbObject('user_id')
-    hash = new DbObject('hash')
+    user_id = new DbColumn('user_id')
+    hash = new DbColumn('hash')
 
     get(id, hash) {
         return sqlFirst`SELECT * FROM ${this} WHERE ${this.user_id} = ${id} AND ${this.hash} = ${hash}`

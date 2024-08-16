@@ -33,7 +33,7 @@ async function removeUserId(user) {
 }
 
 async function loginCarer(carer) {
-    const response = await Http.postJson(baseUrl(Routes.login), { email: carer.email, password: carer.password })
+    const response = await Http.postJson(baseUrl(Routes.loginCurrent), { email: carer.email, password: carer.password })
     assert(response.ok)
     carer.accessToken = await response.text()
     console.log(`logging in ${carer.full_name()}`)

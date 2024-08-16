@@ -6,11 +6,18 @@ export default class DbObject {
     }
 }
 
-export class Table extends DbObject { }
-export class Column extends DbObject { }
+export class DbTable extends DbObject { }
+export class DbColumn extends DbObject { }
 
-export class IdTable extends Table {
-    id = new Column('id')
+export class DbFunction extends DbObject {
+    constructor(name, ...values) {
+        super(name)
+        this.values = values
+    }
+}
+
+export class IdTable extends DbTable {
+    id = new DbColumn('id')
 
     async get(id) {
         if (id === undefined)
@@ -32,6 +39,7 @@ export class IdTable extends Table {
     }
 }
 
+// this probably needs refactoring and a way to integrate with models better
 export class IdModelTable extends IdTable {
     constructor(name, getModelType) {
         super(name)

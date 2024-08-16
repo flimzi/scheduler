@@ -2,6 +2,10 @@ export class Definiton {
     static random() {
         return Object.random(this)
     }
+
+    static isValid(value) {
+        return Object.values(this).includes(value)
+    }
 }
 
 export class Roles extends Definiton {
@@ -23,4 +27,5 @@ export class EventTypes extends Definiton {
 export class RelationshipTypes extends Definiton {
     static Carer = 0
     static Owner = 1
+    static Friend = 2
 }
