@@ -9,7 +9,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
 
-    if (token == null)
+    if (!token)
         return res.sendStatus(Http.Status.Unauthorized)
 
     req.user = await User.authenticate(token)
@@ -41,7 +41,7 @@ export const authorizeUser = type => (req, res, next) => {
 // im yet to learn the sacred knowledge of handling async errors in nested middleware, asyncHandler does nothing here
 export const authorizeCarerByRouteParameter = (paramName, ...relationshipTypes) => (req, res, next) => {
     authenticate(req, res, async () => {
-        req.targetUser = await users.get(req.params[paramName])
+        req.targetUser = await users.getId(req.params[paramName])
 
         if (!req.targetUser)
             return res.send(Http.Status.NotFound)

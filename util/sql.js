@@ -43,7 +43,8 @@ mssql.Request.prototype.addParam = function(value) {
     if (Array.isArray(value))
         return this.addParams(value)
 
-    if (Object.isObject(value))
+    // this could also check for mssql native types
+    if (Object.isObject(value) && !Object.isDate(value))
         return this.addList(value)
 
     const name = this.paramCount++

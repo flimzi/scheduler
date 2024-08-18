@@ -1,10 +1,10 @@
-import Model from './Model.js'
 import { fakerPL as faker } from '@faker-js/faker'
-import { Genders } from '../util/definitions.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
-import users from '../schema/Users.js'
-import { sql, sqlInsert } from '../util/sql.js'
 import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
+import users from '../schema/Users.js'
+import { Genders } from '../util/definitions.js'
+import { sql, sqlInsert } from '../util/sql.js'
+import Model from './Model.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg }) {
@@ -14,6 +14,10 @@ export default class User extends Model {
 
     static async authenticate(token) {
         const accessToken = await AccessToken.verify(token)
+        
+        if (!accessToken)
+            return
+
         const tokenHash = AccessToken.hash(token)
 
         if (!await accessTokens.get(accessToken.id, tokenHash))
@@ -41,12 +45,13 @@ export default class User extends Model {
         delete this.tokenHash
     }
 
+    // this as well as delete update could be handled by a optional parameter in model
     async fetch() {
-        return users.get(this.id) 
+        return users.getId(this.id) 
     }
 
     async delete(transaction) {
-        await users.delete(this, transaction)
+        await users.deleteId(this, transaction)
     }
 
     full_name() {
@@ -74,7 +79,7 @@ export default class User extends Model {
     }
 
     static fake() {
-        return new User({
+        return new this.prototype.constructor({
             first_name: faker.person.firstName(),
             last_name: faker.person.lastName(),
             email: faker.internet.email(),

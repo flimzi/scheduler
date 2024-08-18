@@ -1,12 +1,13 @@
 import User from '../models/User.js'
-import { sqlExists } from '../util/sql.js'
-import DbObject, { IdModelTable, DbColumn } from './DbObject.js'
+import { sqlExists, sqlCast } from '../util/sql.js'
+import { DbTable, DbColumn } from './DbObject.js'
 
-class Users extends IdModelTable {
+class Users extends DbTable {
     constructor() {
         super('users', () => User)
     }
 
+    id = new DbColumn('id')
     role = new DbColumn('role')
     created_at = new DbColumn('created_at')
     email = new DbColumn('email')
@@ -21,18 +22,22 @@ class Users extends IdModelTable {
         return [ this.id, this.role, this.email, this.first_name, this.last_name ]
     }
 
+    async getId(id) {
+        return super.get(id).as(User.conversion)
+    }
+
     async getByEmail(email) {
         if (email === undefined)
             return undefined
 
-        return this.sqlModel`SELECT * FROM ${this} WHERE ${this.email} = ${email}`
+        return sqlCast(User.conversion)`SELECT * FROM ${this} WHERE ${this.email} = ${email}`
     }
 
     async getByVerificationToken(token) {
         if (token === undefined)
             return undefined
 
-        return this.sqlModel`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`
+        return sqlCast(User.conversion)`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`
     }
 
     async emailExists(email) {

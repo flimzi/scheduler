@@ -1,5 +1,6 @@
 import 'dotenv/config'
-import { Carer, Patient } from '../models/users.js'
+import { WebSocket } from 'ws'
+import { User, Patient } from '../models/users.js'
 import { Http } from '../util/http.js'
 import { Routes } from '../routes/main.js'
 import { assert } from '../util/helpers.js'
@@ -10,7 +11,7 @@ function baseUrl(route) {
 }
 
 async function registerCarer() {
-    const carer = Carer.fake()
+    const carer = User.fake()
     const response = await Http.postJson(baseUrl(Routes.register), carer)
     assert(response.status, Http.Status.Created)
     console.log(`creating ${carer.full_name()}`)
@@ -49,7 +50,7 @@ async function logoutCarer(carer) {
 }
 
 async function createPatient(carer) {
-    const patient = Patient.fake()
+    const patient = User.fake()
     const response = await Http.postJson(baseUrl(Routes.currentUser), patient, carer.accessToken)
     assert(response.status, Http.Status.Created)
     console.log(`adding patient ${patient.full_name()}`)
@@ -99,4 +100,10 @@ export async function carerActions1(size = 20) {
         await removeUser(carer)
         delete carers[carer.id]
     }
+}
+
+function socketTest() {
+    const carer1 = registerCarer()
+
+    
 }

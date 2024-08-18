@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { DbTable, DbColumn } from "./DbObject.js";
 import { sqlDelete, sqlFirst } from '../util/sql.js';
+import { assert } from 'console';
 
 class AccessTokens extends DbTable {
     constructor() {
@@ -11,12 +12,12 @@ class AccessTokens extends DbTable {
     user_id = new DbColumn('user_id')
     hash = new DbColumn('hash')
 
-    get(id, hash) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.user_id} = ${id} AND ${this.hash} = ${hash}`
+    get(userId, hash) {
+        return sqlFirst`SELECT * FROM ${this} WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
     }
 
-    delete(id, hash) {
-        return sqlDelete(this)`WHERE ${this.user_id} = ${id} AND ${this.hash} = ${hash}`
+    delete(userId, hash) {
+        return sqlDelete(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
     }
 
     deleteForUser({ id }) {
@@ -45,6 +46,9 @@ export class AccessToken {
     }
 
     static verify(token) {
+        if (!token)
+            return
+
         return new Promise((resolve, reject) => {
             jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
                 err && reject(err)

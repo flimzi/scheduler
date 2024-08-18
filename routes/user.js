@@ -25,7 +25,7 @@ export class UserRoutes {
 router.patch(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
     const user = await User.from(req.body).getUpdateModel()
     user.id = req.user.id
-    await users.update(user)
+    await users.updateId(user)
     res.send()
 }))
 

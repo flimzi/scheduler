@@ -42,6 +42,7 @@ Object.isObject = value => typeof value === 'object'
 Object.isFunction = value => typeof value === 'function'
 Object.isString = value => typeof value === 'string'
 Object.isNumber = value => typeof value === 'number'
+Object.isDate = value => value instanceof Date
 
 Object.isType = function(obj, type) {
     switch (type) {
