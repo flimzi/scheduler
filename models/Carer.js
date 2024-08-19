@@ -7,6 +7,8 @@ import { RelationshipTypes, Roles } from '../util/definitions.js'
 import { isStrongPassword, isValidEmail } from '../util/helpers.js'
 import { sqlTransaction, sqlUpdate } from '../util/sql.js'
 import { Patient, User } from './users.js'
+import { Http } from '../util/http.js'
+import { ArgumentError } from '../util/errors.js'
 
 export default class Carer extends User {
     role = Roles.Carer
@@ -49,6 +51,9 @@ export default class Carer extends User {
     }
 
     static async login({ email, password }) {
+        if (!email || !password)
+            return undefined
+
         const user = await users.getByEmail(email)
 
         if (!user?.verified || !await bcrypt.compare(password, user.password))
@@ -64,6 +69,7 @@ export default class Carer extends User {
     async getUpdateModel() {
         const model = await super.getUpdateModel()
 
+        // ideally this would be a result object so 
         if (!isValidEmail(model.email))
             throw new ArgumentError(`${model.email} is not a valid email`)
         
@@ -71,7 +77,7 @@ export default class Carer extends User {
             throw new ArgumentError(`${model.password} is not a strong password`)
 
         if (await users.emailExists(model.email))
-            throw new ArgumentError(`user ${model.email} already exists`)
+            throw new ArgumentError(`user ${model.email} already exists`, Http.Status.Conflict)
 
         model.first_name = model.first_name?.toLettersOnly().capitalFirst()
         model.last_name = model.last_name?.toLettersOnly().capitalFirst()

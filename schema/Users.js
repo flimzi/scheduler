@@ -17,13 +17,14 @@ class Users extends DbTable {
     access_token = new DbColumn('access_token')
     verified = new DbColumn('verified')
     verification_token = new DbColumn('verification_token')
+    fcm_token = new DbColumn('fcm_token')
 
     minInfo() {
         return [ this.id, this.role, this.email, this.first_name, this.last_name ]
     }
 
     async getId(id) {
-        return super.get(id).as(User.conversion)
+        return super.getId(id).cast(User.conversion)
     }
 
     async getByEmail(email) {

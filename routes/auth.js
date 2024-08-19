@@ -13,6 +13,7 @@ export class AuthRoutes {
     static logout = '/logout'
     static logoutAll = '/logoutAll'
     static verify = '/verify'
+    static fcmToken = '/fcm'
 }
 
 router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
@@ -38,6 +39,11 @@ router.post(AuthRoutes.verify, debounceSecond, asyncHandler(async (req, res) => 
     if (!await User.verify(req.body.token))
         return res.sendStatus(403)
 
+    res.send()
+}))
+
+router.post(AuthRoutes.fcmToken, authenticate, asyncHandler(async (req, res) => {
+    await req.user.updateFcmToken(req.body.token)
     res.send()
 }))
 

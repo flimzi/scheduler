@@ -7,9 +7,9 @@ import { sql, sqlInsert } from '../util/sql.js'
 import Model from './Model.js'
 
 export default class User extends Model {
-    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg }) {
+    constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
         // convert createdat to js datetime
-        super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg })
+        super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
 
     static async authenticate(token) {
@@ -47,7 +47,7 @@ export default class User extends Model {
 
     // this as well as delete update could be handled by a optional parameter in model
     async fetch() {
-        return users.getId(this.id) 
+        return users.getId(this.id) // this could also be new this.constructor() but its irrelevant i think
     }
 
     async delete(transaction) {
@@ -64,6 +64,7 @@ export default class User extends Model {
         delete user.verification_token
         delete user.verified
         delete user.tokenHash
+        delete user.fcm_token
         return user
     }
 
@@ -74,17 +75,21 @@ export default class User extends Model {
         delete user.verified
         delete user.verification_token
         delete user.tokenHash
+        delete user.fcm_token
 
         return user
     }
 
     static fake() {
+        const gender = Genders.random()
+        const sexType = gender === Genders.Female ? 'female' : 'male'
+
         return new this.prototype.constructor({
-            first_name: faker.person.firstName(),
-            last_name: faker.person.lastName(),
+            gender,
+            first_name: faker.person.firstName(sexType),
+            last_name: faker.person.lastName(sexType),
             email: faker.internet.email(),
             password: faker.internet.password(),
-            gender: Genders.random(),
             phone_number: faker.phone.number(),
             birth_date: faker.date.birthdate(),
             height_cm: faker.number.int(140, 210),
@@ -106,5 +111,9 @@ export default class User extends Model {
 
     async getGivenEvents({ receiverId, eventType, status }) {
         return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, eventType, status })}`
+    }
+
+    async updateFcmToken(token) {
+        return users.updateId(this, { [users.fcm_token.name]: token })
     }
 }

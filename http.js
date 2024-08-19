@@ -20,7 +20,8 @@ app.use((err, req, res, next) => {
     console.error(err)
 
     if (err instanceof ArgumentError) {
-        res.send(Http.Status.BadRequest)
+        res.status(err.status ?? Http.Status.BadRequest)
+        res.send(err.message)
         return
     }
 

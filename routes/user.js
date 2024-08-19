@@ -9,6 +9,7 @@ import { User, Carer, Patient } from '../models/users.js'
 import { RelationshipTypes } from '../util/definitions.js'
 import events from '../schema/Events.js'
 import Event from '../models/Event.js'
+import { testFcmForUser } from '../tests/fcm.mjs'
 const router = express.Router()
 
 export class UserRoutes {
@@ -20,6 +21,7 @@ export class UserRoutes {
     static userEvent(id = ':id') { return this.user(id) + '/event' }
     static primaryCurrent = this.currentUser + '/primary'
     static secondaryCurrent = this.currentUser + '/secondary'
+    static fcmTest = this.currentUser + '/fcmTest'
 }
 
 router.patch(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
@@ -38,6 +40,11 @@ router.get(UserRoutes.primaryCurrent, authenticate, asyncHandler(async (req, res
 router.get(UserRoutes.secondaryCurrent, authenticate, asyncHandler(async (req, res) => {
     const relationshipTypes = req.query.type?.split(',').filter(t => RelationshipTypes.isValid(+t))
     res.json(await req.user.getSecondaries(relationshipTypes))
+}))
+
+router.get(UserRoutes.fcmTest, authenticate, asyncHandler(async (req, res) => {
+    await testFcmForUser(await req.user.fetch())
+    res.send()
 }))
 
 router.get(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {

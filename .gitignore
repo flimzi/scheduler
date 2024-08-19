@@ -34,3 +34,4 @@ coverage/
 *.p12
 *.key
 *.crt
+firebase/serviceAccount.json

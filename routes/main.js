@@ -13,13 +13,15 @@ export class Routes {
     static currentUser = this.api + '/user'
     
     static get register() { return this.auth + AuthRoutes.register }
-    static get loginCurrent() { return this.auth + AuthRoutes.loginCurrent }
+    static get loginCurrent() { return this.auth + AuthRoutes.login }
     static get logoutCurrent() { return this.auth + AuthRoutes.logout }
     static get logoutAllCurrent() { return this.auth + AuthRoutes.logoutAll }
+    static get fcmToken() { return this.auth + AuthRoutes.fcmToken }
     
     static login(id) { return this.currentUser + UserRoutes.login(id) }
     static logout(id) { return this.currentUser + UserRoutes.logout(id) }
     static user(id) { return this.currentUser + UserRoutes.user(id) }
+    static get fcmTest() { return this.currentUser + UserRoutes.fcmTest }
     
     static verification = '/verification'
 }

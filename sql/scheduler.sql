@@ -11,10 +11,11 @@ CREATE TABLE [users] (
 	[phone_number] nvarchar(20),
 	[height_cm] int,
 	[weight_kg] int,
+	[postal_code] nvarchar(20),
+	[street_address] nvarchar(100),
 	[verification_token] nvarchar(450),
 	[verified] bit NOT NULL DEFAULT 0,
-	[postal_code] nvarchar(20),
-	[street_address] nvarchar(100)
+	[fcm_token] nvarchar(450)
 	PRIMARY KEY ([id])
 );
 
@@ -59,7 +60,7 @@ CREATE INDEX [idx_users_verification_token] ON [users] ([verification_token])
 
 CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
 CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
-CREATE INDEX [idx_events_type] ON [events] [(type)]
+CREATE INDEX [idx_events_type] ON [events] ([type])
 
 CREATE INDEX [idx_relationships_primary_id] ON [relationships] ([primary_id])
 CREATE INDEX [idx_relationships_secondary_id] ON [relationships] ([secondary_id])

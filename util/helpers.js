@@ -22,4 +22,15 @@ export function assertTypes(...valueTypePairs) {
     valueTypePairs.map(([value, type]) => assertType(value, type))
 }
 
+export function baseUrl(route) {
+    // no idea if this will work in prod
+    return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + route
+}
+
 export const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next)
+export const getBearer = req => req.headers.authorization?.split(' ')[1]
+export const setBearer = token => 'Bearer ' + token
+
+export class Result {
+    
+}

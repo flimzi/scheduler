@@ -1,5 +1,6 @@
 import fetch, { Response } from "node-fetch"
 import { IncomingMessage } from 'http'
+import { setBearer } from "./helpers.js"
 
 export class Http {
     static Status = {
@@ -9,6 +10,7 @@ export class Http {
         Unauthorized: 401,
         Forbidden: 403,
         NotFound: 404,
+        Conflict: 409,
         TooManyRequests: 429,
         ServerError: 500,
     }
@@ -17,7 +19,7 @@ export class Http {
         init.headers ??= {}
 
         if (accessToken)
-            init.headers['Authorization'] = 'Bearer ' + accessToken
+            init.headers.authorization = setBearer(accessToken)
 
         return fetch(url, init).catch(e => new Response(e, { status: 0 }))
     }

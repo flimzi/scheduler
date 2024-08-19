@@ -1,4 +1,5 @@
 import { DbColumn, DbTable } from "./DbObject.js"
+import { substring } from "./functions.js"
 
 class Events extends DbTable {
     constructor() {
@@ -15,6 +16,12 @@ class Events extends DbTable {
     start_date = new DbColumn('start_date')
     duration_seconds = new DbColumn('duration_seconds')
     interval_seconds = new DbColumn('interval_seconds')
+
+    abbreviatedEvents() {
+        const columns = this.getColumns(this.info)
+        columns.push(substring(this.info, 1, 100))
+        return columns
+    }
 }
 
 const events = new Events()

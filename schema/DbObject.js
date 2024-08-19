@@ -1,9 +1,18 @@
 import { TableEventTypes } from "../util/definitions.js"
-import { sqlCast, sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
+import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
 
 export default class DbObject {
     constructor(name) {
         this.name = name
+    }
+
+    as(alias) {
+        this.alias = alias
+        return this
+    }
+
+    getAlias() {
+        return this.alias ? ` AS ` + this.alias : ''
     }
 }
 
@@ -60,13 +69,13 @@ export class DbTable extends DbObject {
         this.emitDelete(id)
     }
 
-    async updateId(obj, transaction) {
-        await sqlUpdate(this, obj, transaction)`WHERE ${this.id} = ${obj.id}`
+    async updateId({ id }, obj, transaction) {
+        await sqlUpdate(this, obj, transaction)`WHERE ${this.id} = ${id}`
         this.emitUpdate(id)
     }
 
-    getColumns() {
-        return Object.values(this).filter(v => v instanceof DbColumn)
+    getColumns(...except) {
+        return Object.values(this).filter(v => v instanceof DbColumn && !except.includes(v))
     }
 }
 

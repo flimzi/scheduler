@@ -1,16 +1,11 @@
 import 'dotenv/config'
 import { WebSocket } from 'ws'
-import { User, Patient } from '../models/users.js'
+import { User } from '../models/users.js'
 import { Http } from '../util/http.js'
 import { Routes } from '../routes/main.js'
-import { assert } from '../util/helpers.js'
+import { assert, setBearer, baseUrl } from '../util/helpers.js'
 
-function baseUrl(route) {
-    // no idea if this will work in prod
-    return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + route
-}
-
-async function registerCarer() {
+export async function registerCarer() {
     const carer = User.fake()
     const response = await Http.postJson(baseUrl(Routes.register), carer)
     assert(response.status, Http.Status.Created)
@@ -19,37 +14,37 @@ async function registerCarer() {
     return carer
 }
 
-async function removeUser(user) {
+export async function removeUser(user) {
     const response = await Http.delete(baseUrl(Routes.currentUser), user.accessToken)
     console.log(`removing ${user.full_name()}`)
-    assert(response.ok)
+    assert(response.status, Http.Status.Ok)
     return user
 }
 
-async function removeUserId(user) {
+export async function removeUserId(user) {
     const response = await Http.delete(baseUrl(Routes.user(user.id)), user.accessToken)
     console.log(`removing ${user.full_name()}`)
-    assert(response.ok)
+    assert(response.status, Http.Status.Ok)
     return user
 }
 
-async function loginCarer(carer) {
+export async function loginCarer(carer) {
     const response = await Http.postJson(baseUrl(Routes.loginCurrent), { email: carer.email, password: carer.password })
-    assert(response.ok)
+    assert(response.status, Http.Status.Ok)
     carer.accessToken = await response.text()
     console.log(`logging in ${carer.full_name()}`)
     return carer
 }
 
-async function logoutCarer(carer) {
+export async function logoutCarer(carer) {
     const response = await Http.fetch(baseUrl(Routes.logoutCurrent), {}, carer.accessToken)
-    assert(response.ok)
+    assert(response.status, Http.Status.Ok)
     console.log(`logging out ${carer.full_name()}`)
     delete carer.accessToken
     return carer
 }
 
-async function createPatient(carer) {
+export async function createPatient(carer) {
     const patient = User.fake()
     const response = await Http.postJson(baseUrl(Routes.currentUser), patient, carer.accessToken)
     assert(response.status, Http.Status.Created)
@@ -102,8 +97,8 @@ export async function carerActions1(size = 20) {
     }
 }
 
-function socketTest() {
-    const carer1 = registerCarer()
-
-    
+export async function socketTest() {
+    const carer1 = await registerCarer()
+    await loginCarer(carer1)
+    const ws = new WebSocket('ws://localhost:3000', { headers: { authorization: setBearer(carer1.accessToken) } })
 }

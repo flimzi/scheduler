@@ -35,10 +35,10 @@ mssql.Request.prototype.addParam = function(value) {
         return 'NULL'
 
     if (value instanceof DbFunction)
-        return `${value.name}(${this.addParams(value.values)})`
+        return `${value.name}(${this.addParams(value.values)})` + value.getAlias()
 
     if (value instanceof DbObject)
-        return value.name
+        return value.name + value.getAlias()
 
     if (Array.isArray(value))
         return this.addParams(value)
