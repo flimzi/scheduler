@@ -43,7 +43,7 @@ router.post(AuthRoutes.verify, debounceSecond, asyncHandler(async (req, res) => 
 }))
 
 router.post(AuthRoutes.fcmToken, authenticate, asyncHandler(async (req, res) => {
-    await req.user.updateFcmToken(req.body.token)
+    await req.user.updateFcmToken(req.body)
     res.send()
 }))
 

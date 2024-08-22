@@ -10,6 +10,7 @@ import { Http } from './util/http.js'
 
 const app = express()
 app.use(express.json())
+app.use(express.text())
 app.use(express.static('public'))
 
 app.use(Routes.auth, authRoutes)

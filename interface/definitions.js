@@ -25,8 +25,8 @@ export class Genders extends Definition {
 export class EventTypes extends Definition {
     static Alert = 100
     static Activity = 200
-    static Drug = 300
     static Message = 400
+    static Task = 500
 }
 
 export class RelationshipTypes extends Definition {
@@ -45,7 +45,19 @@ export class OutgoingMessageType extends EventTypes {
 }
 
 export class TableEventTypes extends Definition {
-    static Insert = 1
-    static Update = 2
-    static Delete = 3
+    static Change = 1
+    static Insert = 2
+    static Update = 3
+    static Delete = 4
+}
+
+export class EventStatus extends Definition {
+    static Pending = 1
+    static Ongoing = 2
+    static Completed = 3
+    static Missed = 4
+}
+
+export class TaskTypes extends Definition {
+    static Test = EventTypes.Task + 1
 }

@@ -1,4 +1,4 @@
-import { TableEventTypes } from "../util/definitions.js"
+import { TableEventTypes } from "../interface/definitions.js"
 import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
 
 export default class DbObject {
@@ -6,6 +6,7 @@ export default class DbObject {
         this.name = name
     }
 
+    // not sure how to do this yet
     as(alias) {
         this.alias = alias
         return this
@@ -16,7 +17,12 @@ export default class DbObject {
     }
 }
 
-export class DbColumn extends DbObject { }
+export class DbColumn extends DbObject {
+    constructor(name, validation) {
+        super(name)
+        this.validation = validation
+    }
+}
 
 export class DbTable extends DbObject {
     // #events = TableEventTypes.values().reduce((acc, cur) => acc[cur] = []; return acc, {})
@@ -24,32 +30,26 @@ export class DbTable extends DbObject {
     #events = new EventTarget()
 
     on(eventType, listener) {
-        this.#events.addEventListener(eventType, ({detail}) => listener(detail))
+        this.#events.addEventListener(eventType, ({ detail }) => listener(detail))
     }
 
-    emit(eventType, detail) {
+    emit(eventType, detail, transaction) {
+        if (transaction) {
+            transaction.onCommit(e => this.emit(eventType, detail))
+            return
+        }
+
         this.#events.dispatchEvent(new CustomEvent(eventType, { detail }))
+        this.#events.dispatchEvent(new CustomEvent(TableEventTypes.Change, { eventType, detail }))
     }
 
-    // emitInsert(id) {
-    //     this.emit(TableEventTypes.Insert, id)
-    // }
-
-    // emitUpdate(id) {
-    //     this.emit(TableEventTypes.Update, id)
-    // }
-
-    // emitDelete(id) {
-    //     this.emit(TableEventTypes.Delete, id)
-    // }
-
-    // not sure about adding properties here
     emitInsert = id => this.emit(TableEventTypes.Insert, id)
-    emitUpdate = id => this.emit(TableEventTypes.Update, id)
     emitDelete = id => this.emit(TableEventTypes.Delete, id)
+    emitUpdate = (id, obj) => this.emit(TableEventTypes.Update, { id, obj })
     onInsert = listener => this.on(TableEventTypes.Insert, listener)
-    onUpdate = listener => this.on(TableEventTypes.Update, listener)
     onDelete = listener => this.on(TableEventTypes.Delete, listener)
+    onUpdate = listener => this.on(TableEventTypes.Update, listener)
+    onChange = listener => this.on(TableEventTypes.Change, listener)
 
     async add(obj, transaction) {
         const id = await sqlInsert(this, obj, transaction)
@@ -69,9 +69,16 @@ export class DbTable extends DbObject {
         this.emitDelete(id)
     }
 
+    // todo this should either allow for listening based on column
+    // or provide oldObj and newObj (but the former is better because no calls, the latter would be more comprehensive because it would involve triggers)
+    // also we need to take the transaction into consideration (add commited event listener to transaction object)
     async updateId({ id }, obj, transaction) {
         await sqlUpdate(this, obj, transaction)`WHERE ${this.id} = ${id}`
-        this.emitUpdate(id)
+        this.emitUpdate(id, obj)
+    }
+
+    async updateColumnId({ id }, dbColumn, value, transaction) {
+        await this.updateId({ id }, { [dbColumn.name]: value }, transaction)
     }
 
     getColumns(...except) {

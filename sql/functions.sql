@@ -30,46 +30,36 @@ CREATE OR ALTER FUNCTION GetEvents(
 	@GiverIds NVARCHAR(100) = NULL,
 	@ReceiverIds NVARCHAR(100) = NULL, 
 	@EventTypes NVARCHAR(20) = NULL,
-	@Statuses NVARCHAR(20) = NULL
+	@Statuses NVARCHAR(20) = NULL,
+	@Before DATETIME = NULL,
+	@After DATETIME = NULL
 )
 RETURNS TABLE
 AS RETURN
 (
-	SELECT * FROM events
+	SELECT * FROM [events]
 	WHERE (
 		@GiverIds IS NULL OR
-		giver_id IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@GiverIds, ','))
+		[giver_id] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@GiverIds, ','))
 	)
 	AND (
 		@ReceiverIds IS NULL OR
-		receiver_id IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@ReceiverIds, ','))
+		[receiver_id] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@ReceiverIds, ','))
 	)
 	AND (
 		@EventTypes IS NULL OR
-		type IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@EventTypes, ','))
+		[type] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@EventTypes, ','))
 	)
 	AND (
 		@Statuses IS NULL OR
-		status IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Statuses, ','))
+		[status] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Statuses, ','))
+	)
+	AND (
+		@Before IS NULL OR
+		[start_date] <= @Before
+	)
+	AND (
+		@After IS NULL OR
+		[start_date] >= @After
 	)
 )
-
-CREATE OR ALTER FUNCTION GetReceivedEvents(
-	@UserId INT, 
-	@GiverIds NVARCHAR(100) = NULL, 
-	@EventTypes NVARCHAR(20) = NULL,
-	@Statuses NVARCHAR(20) = NULL
-)
-RETURNS TABLE
-AS RETURN 
-( SELECT * FROM GetEvents(@GiverIds, CAST(@UserId AS NVARCHAR(100)), @EventTypes, @Statuses) );
-
-CREATE OR ALTER FUNCTION GetReceivedEvents(
-	@UserId INT, 
-	@ReceiverIds NVARCHAR(100) = NULL, 
-	@EventTypes NVARCHAR(20) = NULL,
-	@Statuses NVARCHAR(20) = NULL
-)
-RETURNS TABLE
-AS RETURN 
-( SELECT * FROM GetEvents(CAST(@UserId AS NVARCHAR(100)), @ReceiverIds, @EventTypes, @Statuses) );

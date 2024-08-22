@@ -1,5 +1,5 @@
 import users from '../schema/Users.js'
-import { Roles } from '../util/definitions.js'
+import { Roles } from '../interface/definitions.js'
 import { User } from './users.js'
 
 export default class Patient extends User {

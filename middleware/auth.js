@@ -2,14 +2,13 @@ import { User } from '../models/users.js'
 import relationships from '../schema/Relationships.js'
 import users from '../schema/Users.js'
 import { RelationshipTypes } from '../util/definitions.js'
-import { asyncHandler } from '../util/helpers.js'
+import { asyncHandler, getBearer, isJWT } from '../util/helpers.js'
 import { Http } from '../util/http.js'
 
 export const authenticate = asyncHandler(async (req, res, next) => {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
+    const token = getBearer(req)
 
-    if (!token)
+    if (!isJWT(token))
         return res.sendStatus(Http.Status.Unauthorized)
 
     req.user = await User.authenticate(token)

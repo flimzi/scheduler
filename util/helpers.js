@@ -1,11 +1,14 @@
+
 export function isValidEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return regex.test(email)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 export function isStrongPassword(password) {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/
-    return regex.test(password)
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(password)
+}
+
+export function isJWT(value) {
+    return /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/.test(value)
 }
 
 export function assert(actual, expected = true) {
@@ -27,10 +30,7 @@ export function baseUrl(route) {
     return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + route
 }
 
-export const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next)
 export const getBearer = req => req.headers.authorization?.split(' ')[1]
 export const setBearer = token => 'Bearer ' + token
 
-export class Result {
-    
-}
+export const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next)

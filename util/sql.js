@@ -1,6 +1,6 @@
 import mssql from 'mssql'
 import pool from '../config/db.js'
-import DbObject, { DbFunction } from '../schema/DbObject.js'
+import DbObject, { DbColumn, DbFunction } from '../schema/DbObject.js'
 
 export const createTransaction = () => new mssql.Transaction(pool)
 export const createRequest = transaction => new mssql.Request(transaction ?? pool)
@@ -11,10 +11,12 @@ export async function sqlTransaction(operations, parentTransaction) {
 
     await operations(transaction).catch(async e => {
         await transaction.rollback()
+        transaction.completionEvents.dispatchEvent('rollback', new CustomEvent())
         throw e
     })
 
     !parentTransaction && await transaction.commit()
+    transaction.completionEvents.emit('')
 }
 
 mssql.Request.prototype.command = ''
@@ -43,7 +45,6 @@ mssql.Request.prototype.addParam = function(value) {
     if (Array.isArray(value))
         return this.addParams(value)
 
-    // this could also check for mssql native types
     if (Object.isObject(value) && !Object.isDate(value))
         return this.addList(value)
 
@@ -57,12 +58,16 @@ mssql.Request.prototype.addParams = function(values) {
 }
 
 mssql.Request.prototype.addList = function(obj, delimiter = ',') {
-    return Object.entries(obj).map(([col, val]) => `${col} = ${this.addParam(val)}`).join(delimiter)
+    return Object.entries(obj).map(([col, val]) => `${col.name ?? col} = ${this.addParam(val)}`).join(delimiter)
 }
 
 mssql.Request.prototype.parse = function(strings, ...values) {
     this.command += ' ' + strings.reduce((result, string, i) => result + string + this.addParam(values[i]), '')
     return this
+}
+
+mssql.Request.prototype.select = function() {
+    return this.run().then(r => r.recordset)
 }
 
 mssql.Request.prototype.first = function() {
@@ -116,6 +121,10 @@ mssql.Request.prototype.delete = function(table) {
 mssql.Transaction.prototype.sql = function(strings, ...values) { return this.request().sql(strings, ...values) }
 mssql.Transaction.prototype.insert = function (table, obj) { return this.request().insert(table, obj) }
 
+mssql.Transaction.prototype.completionEvents = new EventTarget()
+mssql.Transaction.prototype.onCommit = function(listener) { this.commitEvents.addEventListener('commit', listener) }
+mssql.Transaction.prototype.onRollback = function(listener) { this.commitEvents.addEventListener('rollback', listener) }
+
 export const sql = (strings, ...values) => createRequest().sql(strings, ...values)
 export const sqlFirst = (strings, ...values) => createRequest().sqlFirst(strings, ...values)
 export const sqlExists = (strings, ...values) => createRequest().sqlExists(strings, ...values)
@@ -125,3 +134,4 @@ export const sqlInsert = (table, obj, transaction) => createRequest(transaction)
 export const sqlUpdate = (table, obj, transaction) => createRequest(transaction).update(table, obj)
 export const sqlDelete = (table, transaction) => createRequest(transaction).delete(table)
 export const sqlCast = type => (strings, ...values) => sqlFirst(strings, ...values).then(result => Object.cast(result, type))
+export const sqlMany = (strings, ...values) => createRequest().sql(strings, ...values).then(rs => rs.flatMap(r => Object.values(r)))

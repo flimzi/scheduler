@@ -42,6 +42,7 @@ router.get(UserRoutes.secondaryCurrent, authenticate, asyncHandler(async (req, r
     res.json(await req.user.getSecondaries(relationshipTypes))
 }))
 
+// maybe add a endpoint for sending fcm messages 
 router.get(UserRoutes.fcmTest, authenticate, asyncHandler(async (req, res) => {
     await testFcmForUser(await req.user.fetch())
     res.send()

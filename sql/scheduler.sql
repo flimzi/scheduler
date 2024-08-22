@@ -37,6 +37,7 @@ CREATE TABLE [events] (
 	[modified_at] datetime NOT NULL DEFAULT GETDATE(),
 	[start_date] datetime NOT NULL,
 	[duration_seconds] int,
+	[end_date] AS DATEADD(SECOND, [duration_seconds], [start_date]) PERSISTED,
 	[interval_seconds] int,
 	PRIMARY KEY ([id])
 );
@@ -60,7 +61,7 @@ CREATE INDEX [idx_users_verification_token] ON [users] ([verification_token])
 
 CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
 CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
-CREATE INDEX [idx_events_type] ON [events] ([type])
+CREATE INDEX [idx_events_queue] ON [events] ([type], [status], [start_date])
 
 CREATE INDEX [idx_relationships_primary_id] ON [relationships] ([primary_id])
 CREATE INDEX [idx_relationships_secondary_id] ON [relationships] ([secondary_id])

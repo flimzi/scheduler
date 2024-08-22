@@ -1,5 +1,7 @@
+import check from "check-types";
 import { DbColumn, DbFunction } from "./DbObject.js";
 
+// replace this with check-types
 function valueToArrayToNull(value) {
     if (value === undefined)
         return null
@@ -10,16 +12,24 @@ function valueToArrayToNull(value) {
     return [value]
 }
 
-export function getPrimaries(userId, relationshipType) {
+export function getPrimary(userId, relationshipType) {
     return new DbFunction('GetPrimaries', userId, valueToArrayToNull(relationshipType))
 }
 
-export function getSecondaries(userId, relationshipType) {
+export function getSecondary(userId, relationshipType) {
     return new DbFunction('GetSecondaries', userId, valueToArrayToNull(relationshipType))
 }
 
-export function getEvents({ giverId, receiverId, eventType, status }) {
-    return new DbFunction('GetEvents', valueToArrayToNull(giverId), valueToArrayToNull(receiverId), valueToArrayToNull(eventType), valueToArrayToNull(status))
+export function getEvents({ giverId, receiverId, eventType, status, before, after }) { 
+    return new DbFunction(
+        'GetEvents', 
+        valueToArrayToNull(giverId), 
+        valueToArrayToNull(receiverId), 
+        valueToArrayToNull(eventType), 
+        valueToArrayToNull(status), 
+        check.date(before) ? before : null, 
+        check.date(after) ? after : null
+    )
 }
 
 export function substring(dbColumn, start, end, alias = true) {

@@ -84,3 +84,10 @@ Array.prototype.random = function() {
 Array.range = function(length) {
     return Array(length).keys().toArray()
 }
+
+Date.max = () => new Date(8640000000000000)
+Date.min = () => new Date(-8640000000000000)
+
+Date.prototype.addMilliseconds = function(milliseconds) {
+    return new Date(this.getTime() + milliseconds)
+}

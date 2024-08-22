@@ -8,8 +8,8 @@ import { setupUserTest } from './tests/fcm.mjs'
 const port = process.env.PORT || 3000
 
 httpServer.listen(port, async () => {
-    // await tests.socketTest()
-    
     console.log(`Server running on port ${port}`)
+
+    // todo try testing web and android clients simultaneously
     await setupUserTest()
 })

@@ -1,14 +1,15 @@
 import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
-import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
+import { getEvents, getPrimary, getSecondary } from '../schema/functions.js'
 import users from '../schema/Users.js'
-import { Genders } from '../util/definitions.js'
+import { Genders } from '../interface/definitions.js'
 import { sql, sqlInsert } from '../util/sql.js'
 import Model from './Model.js'
+import FCMessaging from '../firebase/FCMessaging.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
-        // convert createdat to js datetime
+        // todo convert createdat to js datetime
         super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
 
@@ -97,12 +98,12 @@ export default class User extends Model {
         })
     }
 
-    async getPrimaries(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getPrimaries(this.id, relationshipTypes)}`
+    async getPrimary(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
     }
 
-    async getSecondaries(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getSecondaries(this.id, relationshipTypes)}`
+    async getSecondary(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getSecondary(this.id, relationshipTypes)}`
     }
 
     async getReceivedEvents({ giverId, eventType, status }) {
@@ -113,7 +114,11 @@ export default class User extends Model {
         return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, eventType, status })}`
     }
 
-    async updateFcmToken(token) {
+    async updateMessageToken(token) {
         return users.updateId(this, { [users.fcm_token.name]: token })
+    }
+
+    async sendMessage(data) {
+        return FCMessaging.message({ data })
     }
 }

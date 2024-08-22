@@ -1,16 +1,21 @@
 import express from 'express'
-import { Http } from '../util/http.js'
+import { Http, Status } from '../util/http.js'
 import { asyncHandler } from '../util/helpers.js'
+import { validate } from "../middleware/validate.js"
 import strings from '../resources/strings.en.js'
 import eventStream from '../middleware/eventStream.js'
 import { AuthRoutes } from './auth.js'
 import { UserRoutes } from './user.js'
+import { authenticate } from '../middleware/auth.js'
+import { body, query } from 'express-validator'
+import FCM from '../firebase/FCM.js'
 const router = express.Router()
 
 export class Routes {
     static api = '/api'
     static auth = this.api + '/auth'
     static currentUser = this.api + '/user'
+    static fcm = this.api + '/fcm'
     
     static get register() { return this.auth + AuthRoutes.register }
     static get loginCurrent() { return this.auth + AuthRoutes.login }
@@ -40,6 +45,16 @@ router.get(Routes.verification, eventStream, asyncHandler(async (req, res) => {
     response.unhandled(r => res.write(strings.verificationFailure))
 
     res.end()
+}))
+
+// this should honestly authorize based on a permission
+router.post(Routes.fcm, query('token').notEmpty(), query('repeat').default(0).isInt(), body().isObject(), validate, authenticate, asyncHandler(async (req, res) => {
+    const { token, repeat } = req.query
+    
+    for (let i = 0; i <= repeat; i++)
+        setTimeout(() => FCM.message(token, { data: req.body }), i * 2500)
+    
+    res.send() // response.passthrough(res)
 }))
 
 export default router

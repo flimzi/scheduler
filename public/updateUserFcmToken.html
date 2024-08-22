@@ -44,17 +44,29 @@
             const updateResponse = await fetch(atob(fcmUpdateEndpoint), {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                     'Authorization': 'Bearer ' + accessToken
                 },
-                body: JSON.stringify({ token })
+                body: token
             })
 
             if (!updateResponse.ok)
                 throw new Error()
 
-            // control on message should be handled by service worker i guess?
-            await fetch(atob(testEndpoint), { headers: { authorization: 'Bearer ' + accessToken } })
+            const testUrl = new URL(atob(testEndpoint))
+            testUrl.searchParams.append('token', token)
+            testUrl.searchParams.append('repeat', 10)
+            
+            const messageResponse = await fetch(testUrl.toString(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                body: JSON.stringify({ test1: 'test1', test2: 'test2' })
+            })
+
+            console.log(messageResponse)
         }
 
         function handleMessage(payload) {
