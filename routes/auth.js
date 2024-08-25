@@ -1,50 +1,38 @@
 import express from 'express'
-import { authenticate } from '../middleware/auth.js'
-import { debounceSecond } from '../middleware/debounce.js'
-import { asyncHandler } from '../util/helpers.js'
-import { User, Carer } from '../models/users.js'
-import { Routes } from './main.js'
-import { Http } from '../util/http.js'
+import { Carer, User } from '../models/users.js'
+import { asyncHandler, baseUrl } from '../util/helpers.js'
+import { HttpStatus, HttpRequest } from '../util/http.js'
+import { ApiRoutes } from './api.js'
 const router = express.Router()
 
 export class AuthRoutes {
-    static register = '/register'
     static login = '/login'
-    static logout = '/logout'
-    static logoutAll = '/logoutAll'
     static verify = '/verify'
-    static fcmToken = '/fcm'
 }
 
-router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
-    const { id } = await req.body.cast(Carer).register()
-    return res.status(201).location(Routes.user(id)).send(id + '')
-}))
+// router.post(AuthRoutes.register, debounceSecond, asyncHandler(async (req, res) => {
+//     // const { id } = await req.body.cast(Carer).add()
+//     // return res.status(201).location(ApiRoutes.user(id)).send(id + '')
+
+//     const { id } = await User.from(req.body).add()
+//     return res.status(HttpStatus.Created).location(ApiRoutes.user(id)).send(id + '')
+// }))
+
+// export const register = user => new HttpRequest(baseUrl(ApiRoutes.register)).json(user).post()
 
 router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
-    res.send(await Carer.login(req.body) ?? Http.Status.Unauthorized)
+    res.send(await Carer.login(req.body) ?? HttpStatus.Unauthorized)
 }))
 
-router.get(AuthRoutes.logout, authenticate, asyncHandler(async (req, res) => {
-    await req.user.logout()
-    res.send()
-}))
+export const login = ({ email, password }) => new HttpRequest(baseUrl(ApiRoutes.login)).json({ email, password }).post()
 
-router.get(AuthRoutes.logoutAll, authenticate, asyncHandler(async (req, res) => {
-    await req.user.logoutAll()
-    res.send()
-}))
-
-router.post(AuthRoutes.verify, debounceSecond, asyncHandler(async (req, res) => {
+router.post(AuthRoutes.verify, asyncHandler(async (req, res) => {
     if (!await User.verify(req.body.token))
         return res.sendStatus(403)
 
     res.send()
 }))
 
-router.post(AuthRoutes.fcmToken, authenticate, asyncHandler(async (req, res) => {
-    await req.user.updateFcmToken(req.body)
-    res.send()
-}))
+export const verify = token => new HttpRequest(baseUrl(ApiRoutes.verify)).post({ token }).post()
 
 export default router

@@ -1,126 +1,64 @@
-import fetch, { Response } from "node-fetch"
-import { IncomingMessage } from 'http'
-import { setBearer } from "./helpers.js"
+import fetch from "node-fetch"
+import { baseUrl, setBearer } from "./helpers.js"
 
-// for highlighting
-export class Status {
-    static Ok = 200
-    static Created = 201
-    static BadRequest = 400
-    static Unauthorized = 401
-    static Forbidden = 403
-    static NotFound = 404
-    static Conflict = 409
-    static TooManyRequests = 429
-    static ServerError = 500
+export class HttpStatus {
+    static get Ok() { return 200 }
+    static get Created() { return 201 }
+    static get BadRequest() { return 400 }
+    static get Unauthorized() { return 401 }
+    static get Forbidden() { return 403 }
+    static get NotFound() { return 404 }
+    static get Conflict() { return 409 }
+    static get TooManyRequests() { return 429 }
+    static get ServerError() { return 500 } 
 }
 
 export class HttpRequest {
     init = { headers: {} }
-    handlers = { }
 
-    async fetch(url, accessToken, method) {
-        accessToken && this.bearer(accessToken)
-        method && (this.init.method = method)
-        const response = await fetch(url, this.init).catch(e => new Response(e, { status: 0 }))
-        this.handle(response)
-        console.log(response) // logging could be handled like in logcat with Log.d and env condition to show or not (also probably save to file)
-        return response
+    constructor(url) {
+        this.url = new URL(url)
     }
 
     bearer(token) {
-        this.init.headers.authorization = setBearer(token)
+        token && (this.headers.authorization = setBearer(token))
         return this
     }
 
-    body(value, type) {
+    body(payload, type) {
         this.init.headers['Content-Type'] = type
-        this.init.body = value
+        this.init.body = payload
         return this
     }
 
-    post = (url, accessToken) => this.fetch(url, accessToken, 'POST')
-    delete = (url, accessToken) => this.fetch(url, accessToken, 'DELETE')
-    put = (url, accessToken) => this.fetch(url, accessToken, 'PUT')
+    query(name, value) {
+        this.url.searchParams.append(name, value)
+        return this
+    }
+
+    async fetch(method) {
+        const init = { ...this.init, method }
+        const url = this.url.toString()
+        
+        console.log(`sending to ${url}`)
+        console.log(init)
+        
+        const result = await fetch(url, init)
+
+        console.log(result)
+        return result
+    }
+
+    post = () => this.fetch('POST')
+    delete = () => this.fetch('DELETE')
+    put = () => this.fetch('PUT')
 
     text = text => this.body(text, 'text/plain')
     json = obj => this.body(JSON.stringify(obj), 'application/json')
-
-    on = (status, handler) => this.handlers[status] = handler
-    unhandled = handler => this.handlers.unhandled = handler
-    handle = response => (this.handlers[response.status] ?? this.handlers.unhandled)?.(response)
-    onSuccess = handler => this.on(Status.Ok, handler)
-    onError = handler => this.on(Status.ServerError, handler)
-    onFailure = handler => this.on(0, handler)
 }
 
-export class Http {
-    static Status = {
-        Ok: 200,
-        Created: 201,
-        BadRequest: 400,
-        Unauthorized: 401,
-        Forbidden: 403,
-        NotFound: 404,
-        Conflict: 409,
-        TooManyRequests: 429,
-        ServerError: 500,
+export class RouteRequest extends HttpRequest {
+    constructor(route) {
+        super(baseUrl(route))
     }
-
-    static async fetch(url, init, accessToken) {
-        init.headers ??= {}
-
-        if (accessToken)
-            init.headers.authorization = setBearer(accessToken)
-
-        return fetch(url, init).catch(e => new Response(e, { status: 0 }))
-    }
-
-    static fetchJson(url, init, obj, accessToken) {
-        init.headers ??= {}
-        init.headers['Content-Type'] = 'application/json'
-        init.body = JSON.stringify(obj)
-
-        return this.fetch(url, init, accessToken)
-    }
-
-    static postJson(url, obj, accessToken) {
-        return this.fetchJson(url, { method: 'POST' }, obj, accessToken)
-    }
-
-    static delete(url, accessToken) {
-        return this.fetch(url, { method: 'DELETE' }, accessToken)
-    }
-
-    static putJson(url, obj, accessToken) {
-        return this.fetchJson(url, { method: 'PUT' }, obj, accessToken)
-    }
-}
-
-IncomingMessage.prototype.baseUrl = function(route = '') {
-    return `${this.protocol}://${this.get('host')}` + route
-}
-
-Response.prototype.on = function(status, handler) {
-    if (this.status === status) {
-        this.handled = true
-        return handler(this)
-    }
-}
-
-Response.prototype.onSuccess = function(handler) {
-    return this.on(Http.Status.Ok, handler)
-}
-
-Response.prototype.onFailure = function(handler) {
-    return this.on(0, handler)
-}
-
-Response.prototype.onError = function(handler) {
-    return this.on(Http.Status.ServerError, handler)
-}
-
-Response.prototype.unhandled = function(handler) {
-    if (!this.handled)
-        return handler()
 }

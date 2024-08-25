@@ -1,7 +1,7 @@
 import { WebSocketServer } from "ws"
 import httpServer from "./http.js"
 import User from "./models/User.js"
-import { EventTypes, OutgoingMessageType } from "./util/definitions.js"
+import { EventTypes, OutgoingMessageType } from "./interface/definitions.js"
 import { getBearer } from "./util/helpers.js"
 
 const server = new WebSocketServer({ server: httpServer })

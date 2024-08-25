@@ -1,17 +1,22 @@
 import { fakerPL as faker } from '@faker-js/faker'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
-import { getEvents, getPrimary, getSecondary } from '../schema/functions.js'
+import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
 import users from '../schema/Users.js'
 import { Genders } from '../interface/definitions.js'
 import { sql, sqlInsert } from '../util/sql.js'
 import Model from './Model.js'
 import FCMessaging from '../firebase/FCMessaging.js'
+import relationships from '../schema/Relationships.js'
+import transporter from '../config/mail.js'
+import strings from '../resources/strings.en.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
         // todo convert createdat to js datetime
         super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
+
+    getTable() { return users }
 
     static async authenticate(token) {
         const accessToken = await AccessToken.verify(token)
@@ -36,6 +41,18 @@ export default class User extends Model {
         return signed
     }
 
+    static async login({ email, password }) {
+        if (!email || !password)
+            return undefined
+
+        const user = await users.getByEmail(email)
+
+        if (!user?.verified || !await bcrypt.compare(password, user.password))
+            return undefined
+    
+        return user.generateAccessToken()
+    }
+
     async logout() {
         await accessTokens.delete(this.id, this.tokenHash)
         delete this.tokenHash
@@ -46,13 +63,33 @@ export default class User extends Model {
         delete this.tokenHash
     }
 
-    // this as well as delete update could be handled by a optional parameter in model
-    async fetch() {
-        return users.getId(this.id) // this could also be new this.constructor() but its irrelevant i think
+    sendVerificationEmail() {
+        // if (this.verified)
+        //     return
+
+        const mailOptions = {
+            to: this.email,
+            subject: strings.verificationSubject,
+            html: strings.verificationHtmlBody.format(process.env.WEBSITE, this.verification_token)
+        }
+
+        return transporter.sendMail(mailOptions)
     }
 
-    async delete(transaction) {
-        await users.deleteId(this, transaction)
+    static async verify(token) {
+        if (!token)
+            return false
+
+        const user = users.getByVerificationToken(token)
+
+        if (user === undefined)
+            return false
+
+        if (user.verified)
+            return true
+
+        await sqlUpdate(users, { [users.verified.name]: 1 })`WHERE ${users.verification_token} = ${token}`
+        return true
     }
 
     full_name() {
@@ -60,7 +97,7 @@ export default class User extends Model {
     }
     
     getInfo() {
-        const user = Object.clone(this)
+        const user = this.clone()
         delete user.password
         delete user.verification_token
         delete user.verified
@@ -98,27 +135,35 @@ export default class User extends Model {
         })
     }
 
-    async getPrimary(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
+    async getPrimaries(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getPrimaries(this.id, relationshipTypes)}`
     }
 
-    async getSecondary(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getSecondary(this.id, relationshipTypes)}`
+    async getSecondaries(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getSecondaries(this.id, relationshipTypes)}`
     }
 
-    async getReceivedEvents({ giverId, eventType, status }) {
-        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, eventType, status})}`
+    async getReceivedEvents({ giverId, type, status }) {
+        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, status})}`
     }
 
-    async getGivenEvents({ receiverId, eventType, status }) {
-        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, eventType, status })}`
+    async getGivenEvents({ receiverId, type, status }) {
+        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, status })}`
     }
 
-    async updateMessageToken(token) {
-        return users.updateId(this, { [users.fcm_token.name]: token })
-    }
+    // async updateMessageToken(token) {
+    //     return users.updateId(this, { [users.fcm_token.name]: token })
+    // }
 
-    async sendMessage(data) {
+    async sendFCM(data) {
         return FCMessaging.message({ data })
+    }
+
+    async relateToPrimary(primary, relationshipType, transaction) {
+        return relationships.add(primary, this, relationshipType, transaction)
+    }
+
+    async relateToSecondary(secondary, relationshipType, transaction) {
+        return relationships.add(this, secondary, relationshipType, transaction)
     }
 }

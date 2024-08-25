@@ -1,10 +1,10 @@
+import { EventTypes, Roles } from '../interface/definitions.js'
 import { User, Carer, Patient } from '../models/users.js'
-import { Roles } from './definitions.js'
+import Task from '../models/Task.js'
+import Event from '../models/Event.js'
 
-User.conversion = function({ role }) {
+User.getType = function({ role }) {
     switch (role) {
-        case undefined:
-            return undefined
         case Roles.Carer:
             return Carer
         case Roles.Patient:
@@ -12,4 +12,13 @@ User.conversion = function({ role }) {
     }
 
     return User
+}
+
+Event.getType = function({ type }) {
+    switch (type) {
+        case EventTypes.Task:
+            return Task
+    }
+
+    return Event
 }

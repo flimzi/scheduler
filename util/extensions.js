@@ -1,3 +1,5 @@
+import { IncomingMessage } from 'http'
+
 Object.cast = function cast(obj, type) {
     if (obj === undefined)
         return undefined
@@ -13,7 +15,7 @@ Object.defineProperty(Object.prototype, Object.cast.name, {
     enumerable: false,
     configurable: true,
     writable: true,
-})
+})  
 
 Object.clone = function(obj) {
     return new obj.constructor(obj)
@@ -90,4 +92,8 @@ Date.min = () => new Date(-8640000000000000)
 
 Date.prototype.addMilliseconds = function(milliseconds) {
     return new Date(this.getTime() + milliseconds)
+}
+
+IncomingMessage.prototype.baseUrl = function(route = '') {
+    return `${this.protocol}://${this.get('host')}` + route
 }

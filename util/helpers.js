@@ -1,3 +1,4 @@
+import check from "check-types"
 
 export function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -28,6 +29,24 @@ export function assertTypes(...valueTypePairs) {
 export function baseUrl(route) {
     // no idea if this will work in prod
     return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + route
+}
+
+export function toIntArray(arrayString) {
+    const array = arrayString?.toString().split(',').map(Number)
+
+    if (array?.every(check.integer))
+        return array
+}
+
+export function valueToValues(valueOrValues) {
+    return Array.isArray(valueOrValues) ? valueOrValues : [ valueOrValues ]
+}
+
+export function joinInts(valueOrValues) {
+    const values = valueToValues(valueOrValues)
+
+    if (values.every(check.integer))
+        return values.join()
 }
 
 export const getBearer = req => req.headers.authorization?.split(' ')[1]

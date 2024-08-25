@@ -1,15 +1,16 @@
 import { createRequest, sqlInsert } from "../util/sql.js";
-import DbObject from "./DbObject.js";
+import { DbColumn, DbTable } from "./DbObject.js";
+import { RelationshipTypes } from "../interface/definitions.js";
 
-class Relationships extends DbObject {
+class Relationships extends DbTable {
     constructor() {
         super('relationships')
     }
 
-    id = new DbObject('id')
-    primary_id = new DbObject('primary_id')
-    secondary_id = new DbObject('secondary_id')
-    type = new DbObject('type')
+    id = new DbColumn('id')
+    primary_id = new DbColumn('primary_id')
+    secondary_id = new DbColumn('secondary_id')
+    type = new DbColumn('type')
 
     exists(primary, secondary, ...types) {
         const request = createRequest()
@@ -26,26 +27,6 @@ class Relationships extends DbObject {
         if (!await this.exists(primary, secondary))
             return sqlInsert(this, { primary_id: primary.id, secondary_id: secondary.id, type }, transaction)
     }
-
-    // not sure yet how to do this
-    // getUsers(carer_id, patient_id, ...types) {
-    //     return sql`
-    //         SELECT u.* FROM ${this} r
-    //         JOIN ${users} u ON r.${this.carer_id} = u.${users.id}
-    //         WHERE r.${this.patient_id} = ${id}
-    //         AND r.${this.type} = ${RelationshipTypes.Owner}
-    //     `.then(User.from)
-
-    //     const request = createRequest()
-
-    //     .parse`SELECT u.* FROM ${this} r`
-    //     .parse`JOIN ${users} u ON r.${this.carer_id} = u.${users.id}`
-    //     .parse`WHERE r.${this.patient_id} = ${id}`
-    // }
-
-    // getOwnedBy({ id }) {
-
-    // }
 }
 
 const relationships = new Relationships()

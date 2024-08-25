@@ -1,97 +1,73 @@
 import express from 'express'
 import QRCode from 'qrcode'
-import { authenticate, authorizeUser, authorizeCarerByRouteId, authorizeOwnerByRouteId } from '../middleware/auth.js'
+import { RelationshipTypes } from '../interface/definitions.js'
+import { authorizeCarerByRouteId, authorizeOwnerByRouteId, currentUserPlaceholder, maybeAuthenticate } from '../middleware/auth.js'
+import User from '../models/User.js'
 import { asyncHandler } from '../util/helpers.js'
-import { Http } from '../util/http.js'
-import { Routes } from './main.js'
-import users from '../schema/Users.js'
-import { User, Carer, Patient } from '../models/users.js'
-import { RelationshipTypes } from '../util/definitions.js'
-import events from '../schema/Events.js'
-import Event from '../models/Event.js'
-import { testFcmForUser } from '../tests/fcm.mjs'
+import { HttpStatus, RouteRequest } from '../util/http.js'
+import { sqlTransaction } from '../util/sql.js'
+import { ApiRoutes } from './api.js'
 const router = express.Router()
 
 export class UserRoutes {
-    static currentUser = ''
-    static user(id = ':id') { return this.currentUser + '/' + id }
-    static login(id = ':id') { return this.user(id) + '/login' }
-    static qr(id = ':id') { return this.user(id) + '/qr' }
-    static logout(id = ':id') { return this.user(id) + '/logout' }
-    static userEvent(id = ':id') { return this.user(id) + '/event' }
-    static primaryCurrent = this.currentUser + '/primary'
-    static secondaryCurrent = this.currentUser + '/secondary'
-    static fcmTest = this.currentUser + '/fcmTest'
+    static users = '/users'
+    static user = (userId = ':userId') => '/user' + userId
+    static qr = userId => this.user(userId) + '/qr'
+    static logout = userId => this.user(userId) + '/logout'
+    static logoutAll = userId => this.user(userId) + '/logoutAll'
 }
 
-router.patch(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    const user = await User.from(req.body).getUpdateModel()
-    user.id = req.user.id
-    await users.updateId(user)
-    res.send()
+// router.post(UserRoutes.users, authorizeUser(Carer), asyncHandler(async (req, res) => {
+//     const { id } = await req.user.addPatient(req.body)
+//     res.status(Http.Status.Created).location(UserRoutes.user(id)).send(id + '')
+// }))
+
+router.post(UserRoutes.users, maybeAuthenticate, asyncHandler(async (req, res) => {
+    const { result } = await sqlTransaction(async t => {
+        const targetUser = await User.from(req.body).add(t)
+        await req.user?.relateToSecondary(targetUser, RelationshipTypes.Owner, t)
+        return targetUser
+    })
+
+    if (!result)
+        return res.send(HttpStatus.ServerError)
+    
+    res.status(HttpStatus.Created).location(UserRoutes.user(result.id)).send(result.id + '')
 }))
 
-// test (maybe change to getrelated and only one route for brevity)
-router.get(UserRoutes.primaryCurrent, authenticate, asyncHandler(async (req, res) => {
-    const relationshipTypes = req.query.type?.split(',').filter(t => RelationshipTypes.isValid(+t))
-    res.json(await req.user.getPrimaries(relationshipTypes))
-}))
-
-router.get(UserRoutes.secondaryCurrent, authenticate, asyncHandler(async (req, res) => {
-    const relationshipTypes = req.query.type?.split(',').filter(t => RelationshipTypes.isValid(+t))
-    res.json(await req.user.getSecondaries(relationshipTypes))
-}))
-
-// maybe add a endpoint for sending fcm messages 
-router.get(UserRoutes.fcmTest, authenticate, asyncHandler(async (req, res) => {
-    await testFcmForUser(await req.user.fetch())
-    res.send()
-}))
-
-router.get(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    // res.json(req.user.getInfo())
-    req.user.fetch().then(u => res.json(u.getInfo()))
-}))
-
-router.delete(UserRoutes.currentUser, authenticate, asyncHandler(async (req, res) => {
-    await req.user.delete()
-    res.send()
-}))
-
-router.post(UserRoutes.currentUser, authorizeUser(Carer), asyncHandler(async (req, res) => {
-    const { id } = await req.user.addPatient(req.body)
-    res.status(Http.Status.Created).location(Routes.user(id)).send(id + '')
-}))
-
-// route parameter routes need to be after the static ones, the order is important
-router.get(UserRoutes.login(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
-    res.send(await req.targetUser.generateAccessToken())
-}))
+export const postUsers = (accessToken, user) => new RouteRequest(ApiRoutes.users).bearer(accessToken).json(user).post()
 
 router.get(UserRoutes.qr(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
     res.send(await QRCode.toDataURL(await req.targetUser.generateAccessToken()))
 }))
 
+export const getQr = (accessToken, userId = currentUserPlaceholder) => new RouteRequest(ApiRoutes.qr(userId)).bearer(accessToken).fetch()
+
 router.get(UserRoutes.user(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
     res.json(req.targetUser.getInfo())
 }))
+
+export const getUser = (accessToken, userId = currentUserPlaceholder) => new RouteRequest(ApiRoutes.user(userId)).bearer(accessToken).fetch()
 
 router.delete(UserRoutes.user(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
     await req.targetUser.delete()
     res.send()
 }))
 
+export const deleteUser = (accessToken, userId = currentUserPlaceholder) => new RouteRequest(ApiRoutes.user(userId)).bearer(accessToken).delete()
+
 router.get(UserRoutes.logout(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
-    await res.targetUser.logoutAll()
+    await req.targetUser.logout()
     res.send()
 }))
 
-router.post(UserRoutes.userEvent(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
-    // this is going to need to be abstracted because we need to put it on websocket as well
-    const event = await req.body.cast(Event).getUpdateModel()
-    event.id = req.user.id
-    const { id } = await events.add(event)
-    res.status(Http.Status.Created).send(id)
+export const logout = (accessToken, userId = currentUserPlaceholder) => new RouteRequest(ApiRoutes.logout(userId)).bearer(accessToken).fetch()
+
+router.get(UserRoutes.logoutAll(), authorizeOwnerByRouteId, asyncHandler(async (req, res) => {
+    await req.targetUser.logoutAll()
+    res.send()
 }))
+
+export const logoutAll = (accessToken, userId = currentUserPlaceholder) => new RouteRequest(ApiRoutes.logoutAll(userId)).bearer(accessToken).fetch()
 
 export default router

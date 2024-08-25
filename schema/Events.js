@@ -1,4 +1,3 @@
-import { EventStatus, EventTypes } from "../interface/definitions.js"
 import { createRequest } from "../util/sql.js"
 import { DbColumn, DbTable } from "./DbObject.js"
 import { getEvents, substring } from "./functions.js"
@@ -25,26 +24,9 @@ class Events extends DbTable {
         return columns
     }
 
-    async query({ giverId, receiverId, eventType, status, start, end }) {
-        return sql`SELECT ${this.abbreviatedEvents()} FROM ${getEvents({ giverId, receiverId, eventType, status, start, end })}`
-    }
-
-    // maybe could be in its own child class
-    // this should be a prepared statement ideally
-    async getTaskQueue(minutesBack = 5) {
-        return sql`
-            SELECT ${this.abbreviatedEvents()} FROM ${this}
-            WHERE ${this.type} = ${EventTypes.Task} AND ${this.status} = ${EventStatus.Pending}
-            AND ${this.start_date} BETWEEN DATEADD(MINUTE, ${-minutesBack}, GETDATE()) AND GETDATE()
-        `
-    }
-
-    async getOngoingTasks() {
-        return sql`
-            SELECT ${this.abbreviatedEvents()} FROM ${this}
-            WHERE ${this.type} = ${EventTypes.Task} AND ${this.status} < ${EventStatus.Completed}
-            AND ${this.start_date} <= GETDATE()
-        `
+    async query({ giverId, receiverId, type, status, startBefore, startAfter, limit }) {
+        const events = getEvents({ giverId, receiverId, type, status, startBefore, startAfter })
+        return createRequest().sqlSelect(events, this.abbreviatedEvents(), limit)`ORDER BY ${this.start_date}`
     }
 }
 

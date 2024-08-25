@@ -1,65 +1,25 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import transporter from '../config/mail.js'
-import relationships from '../schema/Relationships.js'
+import { Roles } from '../interface/definitions.js'
 import users from '../schema/Users.js'
-import { RelationshipTypes, Roles } from '../interface/definitions.js'
-import { isStrongPassword, isValidEmail } from '../util/helpers.js'
-import { sqlTransaction, sqlUpdate } from '../util/sql.js'
-import { Patient, User } from './users.js'
-import { Http } from '../util/http.js'
 import { ArgumentError } from '../util/errors.js'
+import { isStrongPassword, isValidEmail } from '../util/helpers.js'
+import { HttpStatus } from '../util/http.js'
+import { User } from './users.js'
 
 export default class Carer extends User {
+    static dbTable = users
     role = Roles.Carer
 
-    sendVerificationEmail() {
-        if (this.verified)
-            return
-
-        const mailOptions = {
-            to: this.email,
-            subject: strings.verificationSubject,
-            html: strings.verificationHtmlBody.format(process.env.WEBSITE, this.verification_token)
-        }
-
-        return transporter.sendMail(mailOptions)
-    }
-
-    static async verify(token) {
-        if (!token)
-            return false
-
-        const user = users.getByVerificationToken(token)
-
-        if (user === undefined)
-            return false
-
-        if (user.verified)
-            return true
-
-        await sqlUpdate(users, { [users.verified.name]: 1 })`WHERE ${users.verification_token} = ${token}`
-        return true
-    }
-
-    async register() {
-        const carer = await this.getUpdateModel()
-        carer.id = await users.add(carer)
-        await carer.sendVerificationEmail()
+    async add(transaction) {
+        const carer = await super.add(transaction)
+        // this is kinda weird and i feel like it should be something that you do after logging in
+        // and then maybe you could authorize based on verified state
+        // cause like what if the email doesnt get delivered - then you would need to create a new account because
+        // non verified and verified accounts are in the same table for simplicity
+        transaction.onCommit(_ => this.sendVerificationEmail())
 
         return carer
-    }
-
-    static async login({ email, password }) {
-        if (!email || !password)
-            return undefined
-
-        const user = await users.getByEmail(email)
-
-        if (!user?.verified || !await bcrypt.compare(password, user.password))
-            return undefined
-    
-        return user.generateAccessToken()
     }
 
     getInfo() {
@@ -77,7 +37,7 @@ export default class Carer extends User {
             throw new ArgumentError(`${model.password} is not a strong password`)
 
         if (await users.emailExists(model.email))
-            throw new ArgumentError(`user ${model.email} already exists`, Http.Status.Conflict)
+            throw new ArgumentError(`user ${model.email} already exists`, HttpStatus.Conflict)
 
         model.first_name = model.first_name?.toLettersOnly().capitalFirst()
         model.last_name = model.last_name?.toLettersOnly().capitalFirst()
@@ -89,14 +49,14 @@ export default class Carer extends User {
         return model
     }
 
-    async addPatient(user, transaction) {
-        const patient = await user.cast(Patient).getUpdateModel()
+    // async addPatient(user, transaction) {
+    //     const patient = await user.to(Patient).getUpdateModel()
 
-        await sqlTransaction(async t => {
-            patient.id = await users.add(patient, t)
-            await relationships.add(this, patient, RelationshipTypes.Owner, t)
-        }, transaction)
+    //     await sqlTransaction(async t => {
+    //         patient.id = await users.add(patient, t)
+    //         await relationships.add(this, patient, RelationshipTypes.Owner, t)
+    //     }, transaction)
 
-        return patient
-    }
+    //     return patient
+    // }
 }

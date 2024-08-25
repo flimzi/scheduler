@@ -29,10 +29,10 @@ AS RETURN
 CREATE OR ALTER FUNCTION GetEvents(
 	@GiverIds NVARCHAR(100) = NULL,
 	@ReceiverIds NVARCHAR(100) = NULL, 
-	@EventTypes NVARCHAR(20) = NULL,
+	@Types NVARCHAR(20) = NULL,
 	@Statuses NVARCHAR(20) = NULL,
-	@Before DATETIME = NULL,
-	@After DATETIME = NULL
+	@StartBefore DATETIME = NULL,
+	@StartAfter DATETIME = NULL
 )
 RETURNS TABLE
 AS RETURN
@@ -47,19 +47,19 @@ AS RETURN
 		[receiver_id] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@ReceiverIds, ','))
 	)
 	AND (
-		@EventTypes IS NULL OR
-		[type] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@EventTypes, ','))
+		@Types IS NULL OR
+		[type] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Types, ','))
 	)
 	AND (
 		@Statuses IS NULL OR
 		[status] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Statuses, ','))
 	)
 	AND (
-		@Before IS NULL OR
-		[start_date] <= @Before
+		@StartBefore IS NULL OR
+		[start_date] <= @StartBefore
 	)
 	AND (
-		@After IS NULL OR
-		[start_date] >= @After
+		@StartAfter IS NULL OR
+		[start_date] >= @StartAfter
 	)
 )

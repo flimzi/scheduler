@@ -1,32 +1,5 @@
 ###
 
-GET http://localhost:3000/api/user
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiI0MjBza3VuQGdtYWlsLmNvbSIsInJvbGUiOjEsImZpcnN0X25hbWUiOm51bGwsImlhdCI6MTcyMzUxMTMyNSwiZXhwIjoxNzU1MDQ3MzI1fQ.cnHTATElzZiysuISkkJYa-FPExftIhoLqtxF5wIKT2w
-
-###
-
-DELETE http://localhost:3000/api/user
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoiNDIwc2t1bkBnbWFpbC5jb20iLCJyb2xlIjoxLCJmaXJzdF9uYW1lIjpudWxsLCJpYXQiOjE3MjM2MDIwNDUsImV4cCI6MTc1NTEzODA0NX0.ccXa3rmMZpxu7AcpdTaTbgFR5Fm8dOntAUFv98SnIqc
-
-###
-
-POST http://localhost:3000/api/user
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjA4MywiZW1haWwiOiI0MjBza3VuQGdtYWlsLmNvbSIsInJvbGUiOjEsImZpcnN0X25hbWUiOm51bGwsImlhdCI6MTcyMzgxOTY0NCwiZXhwIjoxNzU1MzU1NjQ0fQ.NoESKkwNN3JuB0OGc68G8TsYpZVFL-QZNxHhepiXXkw
-Content-Type: application/json
-
-{
-    "first_name": "patientfirst",
-    "last_name": "patientlast"
-}
-
-###
-
-GET http://localhost:3000/api/user/2083
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjA4MywiZW1haWwiOiI0MjBza3VuQGdtYWlsLmNvbSIsInJvbGUiOjEsImZpcnN0X25hbWUiOm51bGwsImlhdCI6MTcyMzgxOTY0NCwiZXhwIjoxNzU1MzU1NjQ0fQ.NoESKkwNN3JuB0OGc68G8TsYpZVFL-QZNxHhepiXXkw
-
-###
-
-GET http://localhost:3000/api/user/secondary?type=1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjA4MywiZW1haWwiOiI0MjBza3VuQGdtYWlsLmNvbSIsInJvbGUiOjEsImZpcnN0X25hbWUiOm51bGwsImlhdCI6MTcyMzgxOTY0NCwiZXhwIjoxNzU1MzU1NjQ0fQ.NoESKkwNN3JuB0OGc68G8TsYpZVFL-QZNxHhepiXXkw
+GET http://localhost:3000/api/user/current
 
 ###
