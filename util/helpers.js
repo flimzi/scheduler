@@ -28,7 +28,7 @@ export function assertTypes(...valueTypePairs) {
 
 export function baseUrl(route) {
     // no idea if this will work in prod
-    return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + route
+    return (!!process.env.DEBUG ? 'http://localhost:' + process.env.PORT : process.env.WEBSITE) + (route ?? '')
 }
 
 export function toIntArray(arrayString) {
@@ -51,5 +51,3 @@ export function joinInts(valueOrValues) {
 
 export const getBearer = req => req.headers.authorization?.split(' ')[1]
 export const setBearer = token => 'Bearer ' + token
-
-export const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next)

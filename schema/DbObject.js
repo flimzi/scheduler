@@ -59,7 +59,7 @@ export class DbTable extends DbObject {
         if (id === undefined)
             return undefined
 
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.id} = ${id}`
+        return sqlFirst(this)`WHERE ${this.id} = ${id}`
     }
 
     async deleteId({ id }, transaction) {

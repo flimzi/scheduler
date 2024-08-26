@@ -1,6 +1,6 @@
 const localhost = '::ffff:127.0.0.1'
 
-export function debounce(interval = 3000) {
+export function debounce(milliseconds) {
     const requestTimestamps = {}
 
     if (!process.env.DEBOUNCE)
@@ -10,7 +10,7 @@ export function debounce(interval = 3000) {
         const now = Date.now()
         const { ip } = req
     
-        if (requestTimestamps[ip] && (now - requestTimestamps[ip] < interval))
+        if (requestTimestamps[ip] && (now - requestTimestamps[ip] < milliseconds))
             return res.sendStatus(429)
     
         requestTimestamps[ip] = now
@@ -18,5 +18,5 @@ export function debounce(interval = 3000) {
     }
 }
 
-export const debounceMinute = debounce(60000)
-export const debounceSecond = debounce(1000)
+export const debounceSeconds = seconds => debounce(seconds * 1000)
+export const debounceMinutes = minutes => debounceSeconds(minutes * 60)

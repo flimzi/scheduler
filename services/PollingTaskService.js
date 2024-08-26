@@ -3,7 +3,7 @@ import events from "../schema/Events.js";
 import { EventStatus, EventTypes, TaskTypes } from "../interface/definitions.js";
 import criticalHandler from "../util/criticalHandler.js";
 import { getEvents } from "../schema/functions.js";
-import { sqlMany } from "../util/sql.js";
+import { sqlIds, sqlMany } from "../util/sql.js";
 
 // it would be better to for example on startup and every hour schedule tasks for the next hour by unique id using node-cron or node-scheduler
 // this could be updated in real time using DbTable.onChange
@@ -32,8 +32,7 @@ export default class PollingTaskService extends Service {
             before: new Date().addMilliseconds(this.defaultTaskDuration)
         })
 
-        // todo make a select helper
-        return sqlMany`SELECT ${events.id} FROM ${query}`
+        return sqlIds(query)
     }
 
     async startTasks() {
@@ -55,7 +54,6 @@ export default class PollingTaskService extends Service {
             events.add(await task.getUpdateModel())
     }
 
-    // this cannot be a sql function because we need the event emitted
     async repairTasks() {
         for (const id of await this.getExpiredTaskIds())
             events.updateColumnId({ id }, events.status, EventStatus.Missed)

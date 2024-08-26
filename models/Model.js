@@ -44,9 +44,9 @@ export default class Model {
     }
 
     async add(transaction) {
-        return this.getTable()?.add(await this.getUpdateModel(), transaction)
+        return this.getTable()?.add(await this.getUpdateModel(), transaction).cast(this.constructor)
         
-        // return this.getTable()?.add(await this.getUpdateModel(), transaction).convert(this.getType)
+        // return this.getTable()?.add(await this.getUpdateModel(), transaction).convert(this.constructor)
     }
 
     async delete(transaction) {
@@ -54,19 +54,19 @@ export default class Model {
     }
 
     async update(updates, transaction) {
-        return this.getTable?.updateId(this, updates, transaction)
+        return this.getTable()?.updateId(this, updates, transaction)
     }
 
     async updateColumn(dbColumn, value, transaction) {
-        return this.getTable?.updateColumnId(this, dbColumn, value, transaction)
+        return this.getTable()?.updateColumnId(this, dbColumn, value, transaction)
     }
 
     async download() {
-        return this.getTable?.getId(this.id)
+        return this.getTable()?.getId(this.id)
     }
 
     async upload() {
-        return this.update(this.getUpdateModel())
+        return this.update(await this.getUpdateModel())
     }
 }
 
@@ -86,5 +86,3 @@ Promise.prototype.cast = async function(type) {
 Promise.prototype.convert = async function(type) {
     return this.then(result => Model.convert(result, type))
 }
-
-export const sqlCast = type => (strings, ...values) => sqlFirst(strings, ...values).cast(type)

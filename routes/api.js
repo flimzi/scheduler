@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/auth.js'
 import eventStream from '../middleware/eventStream.js'
 import { validate } from "../middleware/validate.js"
 import strings from '../resources/strings.en.js'
-import { asyncHandler } from '../util/helpers.js'
+import { asyncHandler } from "../middleware/asyncHandler.js"
 import { AuthRoutes } from './auth.js'
 import { UserRoutes } from './user.js'
 import { RelatedRoutes } from './related.js'
@@ -17,16 +17,16 @@ export class ApiRoutes {
     static fcm = this.api + '/fcm'
     static verification = this.api + '/verification'
 
-    static get auth() { return this.api + '/auth' }
-    static get register() { return this.auth + AuthRoutes.register }
-    static get login() { return this.auth + AuthRoutes.login }
-    static get verify() { return this.auth + AuthRoutes.verify }
+    static get login() { return this.api + AuthRoutes.login }
+    static get verify() { return this.api + AuthRoutes.verify }
 
     static get users() { return this.api + UserRoutes.users }
     static user = userId => this.api + UserRoutes.user(userId)
     static qr = userId => this.api + UserRoutes.qr(userId)
+    static token = userId => this.api + UserRoutes.token(userId)
     static logout = userId => this.api + UserRoutes.logout(userId)
     static logoutAll = userId => this.api + UserRoutes.logoutAll(userId)
+    static sendVerification = userId => this.api + UserRoutes.sendVerification(userId)
 
     static relatedPrimary = userId => this.api + RelatedRoutes.primary(userId)
     static relatedSecondary = userId => this.api + RelatedRoutes.secondary(userId)

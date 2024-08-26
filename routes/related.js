@@ -1,10 +1,11 @@
 import express from 'express'
 import { UserRoutes } from './user.js'
 import { authorizeCarerByRouteId } from '../middleware/auth.js'
-import { asyncHandler, joinInts, toIntArray } from '../util/helpers.js'
+import { joinInts, toIntArray } from '../util/helpers.js'
+import { asyncHandler } from "../middleware/asyncHandler.js"
 import { validate } from '../middleware/validate.js'
 import { query } from 'express-validator'
-import { RouteRequest } from '../util/http.js'
+import { HttpRequest } from '../util/http.js'
 import { ApiRoutes } from './api.js'
 const router = express.Router()
 
@@ -27,7 +28,7 @@ router.get(
 )
 
 export const getPrimary = (accessToken, userId, ...types) => 
-    new RouteRequest(ApiRoutes.relatedPrimary(userId))
+    new HttpRequest(ApiRoutes.relatedPrimary(userId))
         .bearer(accessToken)
         .query('type', joinInts(types))
         .fetch()
@@ -41,7 +42,7 @@ router.get(
 )
 
 export const getSecondary = (accessToken, userId, ...types) =>
-    new RouteRequest(ApiRoutes.relatedSecondary(userId))
+    new HttpRequest(ApiRoutes.relatedSecondary(userId))
         .bearer(accessToken)
         .query('type', joinInts(types))
         .fetch()

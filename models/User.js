@@ -1,14 +1,16 @@
 import { fakerPL as faker } from '@faker-js/faker'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import transporter from '../config/mail.js'
+import FCMessaging from '../firebase/FCMessaging.js'
+import { Genders } from '../interface/definitions.js'
+import strings from '../resources/strings.en.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
 import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
+import relationships from '../schema/Relationships.js'
 import users from '../schema/Users.js'
-import { Genders } from '../interface/definitions.js'
 import { sql, sqlInsert } from '../util/sql.js'
 import Model from './Model.js'
-import FCMessaging from '../firebase/FCMessaging.js'
-import relationships from '../schema/Relationships.js'
-import transporter from '../config/mail.js'
-import strings from '../resources/strings.en.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
@@ -63,14 +65,17 @@ export default class User extends Model {
         delete this.tokenHash
     }
 
-    sendVerificationEmail() {
-        // if (this.verified)
-        //     return
+    async sendVerificationEmail() {
+        if (this.verified)
+            return
+
+        const verification_token = crypto.randomBytes(20).toString('hex')
+        await this.updateColumn(users.verification_token, verification_token)
 
         const mailOptions = {
             to: this.email,
             subject: strings.verificationSubject,
-            html: strings.verificationHtmlBody.format(process.env.WEBSITE, this.verification_token)
+            html: strings.verificationHtmlBody.format(process.env.WEBSITE, verification_token)
         }
 
         return transporter.sendMail(mailOptions)
@@ -107,13 +112,16 @@ export default class User extends Model {
     }
 
     async getUpdateModel() {
-        const user = Object.clone(this)
+        const user = await super.getUpdateModel()
         delete user.id
         delete user.created_at
         delete user.verified
         delete user.verification_token
         delete user.tokenHash
         delete user.fcm_token
+
+        if (user.password)
+            user.password = await bcrypt.hash(user.password, 10)
 
         return user
     }
@@ -135,6 +143,10 @@ export default class User extends Model {
         })
     }
 
+    async sendFCM(data) {
+        return FCMessaging.message({ data })
+    }
+
     async getPrimaries(...relationshipTypes) {
         return sql`SELECT ${users.minInfo()} FROM ${getPrimaries(this.id, relationshipTypes)}`
     }
@@ -143,27 +155,27 @@ export default class User extends Model {
         return sql`SELECT ${users.minInfo()} FROM ${getSecondaries(this.id, relationshipTypes)}`
     }
 
-    async getReceivedEvents({ giverId, type, status }) {
-        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, status})}`
-    }
-
-    async getGivenEvents({ receiverId, type, status }) {
-        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, status })}`
-    }
-
-    // async updateMessageToken(token) {
-    //     return users.updateId(this, { [users.fcm_token.name]: token })
-    // }
-
-    async sendFCM(data) {
-        return FCMessaging.message({ data })
-    }
-
     async relateToPrimary(primary, relationshipType, transaction) {
         return relationships.add(primary, this, relationshipType, transaction)
     }
 
     async relateToSecondary(secondary, relationshipType, transaction) {
         return relationships.add(this, secondary, relationshipType, transaction)
+    }
+
+    async isPrimaryTo(secondary, ...relationshipTypes) {
+        return relationships.exists(this, secondary, ...relationshipTypes)
+    }
+
+    async isSecondaryTo(primary, ...relationshipTypes) {
+        return relationships.exists(primary, this, ...relationshipTypes)
+    }
+
+    async getReceivedEvents({ giverId, type, status }) {
+        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, status})}`
+    }
+
+    async getGivenEvents({ receiverId, type, status }) {
+        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, status })}`
     }
 }

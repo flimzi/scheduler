@@ -1,10 +1,10 @@
 import User from '../models/User.js'
-import { sqlExists, sqlCast } from '../util/sql.js'
+import { sqlExists, sqlFirst } from '../util/sql.js'
 import { DbTable, DbColumn } from './DbObject.js'
 
 class Users extends DbTable {
     constructor() {
-        super('users', () => User)
+        super('users')
     }
 
     id = new DbColumn('id')
@@ -24,25 +24,25 @@ class Users extends DbTable {
     }
 
     async getId(id) {
-        return super.getId(id).cast(User.conversion)
+        return super.getId(id)?.convert(User.getType)
     }
 
     async getByEmail(email) {
         if (email === undefined)
             return undefined
 
-        return sqlCast(User.conversion)`SELECT * FROM ${this} WHERE ${this.email} = ${email}`
+        return sqlFirst(this)`WHERE ${this.email} = ${email}`.convert(User.getType)
     }
 
     async getByVerificationToken(token) {
         if (token === undefined)
             return undefined
 
-        return sqlCast(User.conversion)`SELECT * FROM ${this} WHERE ${this.verification_token} = ${token}`
+        return sqlFirst(this)`WHERE ${this.verification_token} = ${token}`.convert(User.getType)
     }
 
     async emailExists(email) {
-        return sqlExists`SELECT 1 FROM ${this} WHERE ${this.email} = ${email}`
+        return sqlExists(this)`WHERE ${this.email} = ${email}`
     }
 }
 

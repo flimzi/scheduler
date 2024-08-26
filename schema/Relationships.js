@@ -12,15 +12,15 @@ class Relationships extends DbTable {
     secondary_id = new DbColumn('secondary_id')
     type = new DbColumn('type')
 
-    exists(primary, secondary, ...types) {
+    async exists(primary, secondary, ...types) {
         const request = createRequest()
         request.parse`SELECT 1 FROM ${this}`
         request.parse`WHERE ${this.primary_id} = ${primary.id} AND ${this.secondary_id} = ${secondary.id}`
 
         if (types?.length)
-            request.parse`AND ${this.type} IN [${types}]`
+            request.parse`AND ${this.type} IN (${types})`
 
-        return request.exists()
+        return request.any()
     }
 
     async add(primary, secondary, type = RelationshipTypes.Owner, transaction) {

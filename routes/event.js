@@ -4,8 +4,9 @@ import { EventStatus, EventTypes } from '../interface/definitions.js'
 import { authorizeCarerByRouteId } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import events from '../schema/Events.js'
-import { asyncHandler, toIntArray } from '../util/helpers.js'
-import { HttpStatus, RouteRequest } from '../util/http.js'
+import { toIntArray } from '../util/helpers.js'
+import { asyncHandler } from "../middleware/asyncHandler.js"
+import { HttpStatus, HttpRequest } from '../util/http.js'
 import { ApiRoutes } from './api.js'
 import { UserRoutes } from './user.js'
 const router = express.Router()
@@ -33,14 +34,14 @@ router.post(EventRoutes.events(), authorizeCarerByRouteId, asyncHandler(async (r
     res.status(HttpStatus.Created).location(EventRoutes.event(req.targetUser.id, event.id)).send(event)
 }))
 
-export const postEvents = (accessToken, userId, event) => new RouteRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
+export const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
 
 router.get(EventRoutes.event(), authorizeCarerByRouteId, asyncHandler(async (req, res) => {
     const event = await events.getId(req.params.eventId)
     return event ? res.send(event) : res.send(HttpStatus.NotFound)
 }))
 
-export const getEvent = (accessToken, userId, eventId) => new RouteRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
+export const getEvent = (accessToken, userId, eventId) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
 
 router.get(
     EventRoutes.upcomingTasks(),

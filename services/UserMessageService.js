@@ -1,4 +1,4 @@
-import { TableEventTypes } from '../interface/definitions.js'
+import { EventTypes, TableEventTypes } from '../interface/definitions.js'
 import { TaskStatusMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
 import events from '../schema/Events.js'
 import users from '../schema/Users.js'
@@ -8,10 +8,13 @@ import Service from './Service.js'
 export default class UserMessageService extends Service {
     constructor() {
         super()
-        events.onChange(this.onEventsChange)
+        events.onChange(this.onTasksChange)
     }
 
-    async onEventsChange({ tableEventType, deleted, inserted }) {
+    async onTasksChange({ tableEventType, deleted, inserted }) {
+        if (inserted.type !== EventTypes.Task) // this is going to need to check if task types includes
+            return
+
         let message
 
         switch (tableEventType) {

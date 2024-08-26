@@ -17,11 +17,11 @@ export class HttpRequest {
     init = { headers: {} }
 
     constructor(url) {
-        this.url = new URL(url)
+        this.url = new URL(url, baseUrl())
     }
 
     bearer(token) {
-        token && (this.headers.authorization = setBearer(token))
+        token && (this.init.headers.authorization = setBearer(token))
         return this
     }
 
@@ -39,9 +39,7 @@ export class HttpRequest {
     async fetch(method) {
         const init = { ...this.init, method }
         const url = this.url.toString()
-        
-        console.log(`sending to ${url}`)
-        console.log(init)
+        console.log({ url, init, method })
         
         const result = await fetch(url, init)
 
@@ -55,10 +53,4 @@ export class HttpRequest {
 
     text = text => this.body(text, 'text/plain')
     json = obj => this.body(JSON.stringify(obj), 'application/json')
-}
-
-export class RouteRequest extends HttpRequest {
-    constructor(route) {
-        super(baseUrl(route))
-    }
 }
