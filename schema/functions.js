@@ -2,12 +2,12 @@ import check from "check-types";
 import { DbColumn, DbFunction } from "./DbObject.js";
 import { joinInts } from "../util/helpers.js";
 
-export function getPrimaries(userId, ...relationshipTypes) {
-    return new DbFunction('GetPrimaries', userId, joinInts(relationshipTypes) ?? null)
+export function getPrimary(userId, ...relationshipTypes) {
+    return new DbFunction('GetPrimary', userId, joinInts(relationshipTypes) ?? null)
 }
 
-export function getSecondaries(userId, ...relationshipTypes) {
-    return new DbFunction('GetSecondaries', userId, joinInts(relationshipTypes) ?? null)
+export function getSecondary(userId, ...relationshipTypes) {
+    return new DbFunction('GetSecondary', userId, joinInts(relationshipTypes) ?? null)
 }
 
 export function getEvents({ giverId, receiverId, type, status, startBefore, startAfter }) { 

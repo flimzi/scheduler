@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { DbTable, DbColumn } from "./DbObject.js";
 import { sqlDelete, sqlFirst } from '../util/sql.js';
-import { assert } from 'console';
 
 class AccessTokens extends DbTable {
     constructor() {
@@ -13,7 +12,7 @@ class AccessTokens extends DbTable {
     hash = new DbColumn('hash')
 
     get(userId, hash) {
-        return sqlFirst`SELECT * FROM ${this} WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
+        return sqlFirst(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
     }
 
     delete(userId, hash) {
@@ -37,8 +36,7 @@ export class AccessToken {
     }
 
     sign() {
-        const { ...payload } = this
-        return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
+        return jwt.sign({ ...this }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '365d' })
     }
 
     static hash(token) {

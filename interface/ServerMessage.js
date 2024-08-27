@@ -1,7 +1,7 @@
 // define server sent message types for http and fcm and ws
 
 export class ServerMessage {
-    constructor(type, fields) {
+    constructor(type, fields = {}) {
         this.type = type
         Object.assign(this, fields)
     }

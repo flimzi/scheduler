@@ -1,5 +1,6 @@
 import { EventTypes, TableEventTypes } from '../interface/definitions.js'
 import { TaskStatusMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
+import User from '../models/User.js'
 import events from '../schema/Events.js'
 import users from '../schema/Users.js'
 import { ArgumentError } from '../util/errors.js'
@@ -33,10 +34,10 @@ export default class UserMessageService extends Service {
                 throw new ArgumentError()
         }
 
-        const secondary = await users.getId(deleted.receiver_id)
+        const secondary = await users.getId(deleted?.receiver_id ?? inserted.receiver_id)
         secondary.sendFCM(message)
 
-        for (const primary of await secondary.getPrimaries())
-            primary.sendFCM(message)
+        for (const primary of await secondary.getPrimary())
+            primary.cast(User).sendFCM(message)
     }
 }

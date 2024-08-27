@@ -1,6 +1,6 @@
 import express from 'express'
 import { body, query } from 'express-validator'
-import FCM from '../firebase/FCMessaging.js'
+import FCM from '../firebase/FirebaseCloudMessage.js'
 import { authenticate } from '../middleware/auth.js'
 import eventStream from '../middleware/eventStream.js'
 import { validate } from "../middleware/validate.js"
@@ -18,15 +18,16 @@ export class ApiRoutes {
     static verification = this.api + '/verification'
 
     static get login() { return this.api + AuthRoutes.login }
+    static get logout() { return this.api + AuthRoutes.logout }
     static get verify() { return this.api + AuthRoutes.verify }
 
     static get users() { return this.api + UserRoutes.users }
     static user = userId => this.api + UserRoutes.user(userId)
     static qr = userId => this.api + UserRoutes.qr(userId)
     static token = userId => this.api + UserRoutes.token(userId)
-    static logout = userId => this.api + UserRoutes.logout(userId)
     static logoutAll = userId => this.api + UserRoutes.logoutAll(userId)
-    static sendVerification = userId => this.api + UserRoutes.sendVerification(userId)
+    static get sendVerification() { return this.api + UserRoutes.sendVerification }
+    static get fcmToken() { return this.api + UserRoutes.fcmToken }
 
     static relatedPrimary = userId => this.api + RelatedRoutes.primary(userId)
     static relatedSecondary = userId => this.api + RelatedRoutes.secondary(userId)

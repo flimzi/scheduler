@@ -12,9 +12,8 @@ export default class Task extends Event {
         return model
     }
 
-    static everyMinute(giver_id, receiver_id) {
+    static everyMinute() {
         return new this.prototype.constructor({
-            giver_id, receiver_id,
             info: faker.commerce.productDescription(),
             start_date: new Date().addMilliseconds(60 * 1000),
             duration_seconds: 30,

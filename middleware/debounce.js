@@ -8,10 +8,14 @@ export function debounce(milliseconds) {
 
     return (req, res, next) => {
         const now = Date.now()
-        const { ip } = req
-    
-        if (requestTimestamps[ip] && (now - requestTimestamps[ip] < milliseconds))
-            return res.sendStatus(429)
+        const timestamp = requestTimestamps[req.ip]
+
+        if (timestamp) {
+            const remaining = milliseconds - (now - timestamp)
+            
+            if (0 < remaining)
+                return res.status(429).send(remaining)
+        }
     
         requestTimestamps[ip] = now
         next()

@@ -51,7 +51,7 @@ export class TableEventTypes extends Definition {
     static Delete = 4
 }
 
-export class EventStatus extends Definition {
+export class EventStates extends Definition {
     static Pending = 1
     static Ongoing = 2
     static Completed = 3

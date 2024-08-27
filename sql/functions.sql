@@ -1,4 +1,4 @@
-CREATE OR ALTER FUNCTION GetPrimaries(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
+CREATE OR ALTER FUNCTION GetPrimary(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
 RETURNS TABLE 
 AS RETURN
 (
@@ -12,7 +12,7 @@ AS RETURN
 	)
 );
 
-CREATE OR ALTER FUNCTION GetSecondaries(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
+CREATE OR ALTER FUNCTION GetSecondary(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
 RETURNS TABLE 
 AS RETURN
 (

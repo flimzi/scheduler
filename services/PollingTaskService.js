@@ -1,6 +1,6 @@
 import Service from "./Service.js";
 import events from "../schema/Events.js";
-import { EventStatus, EventTypes, TaskTypes } from "../interface/definitions.js";
+import { EventStates, EventTypes, TaskTypes } from "../interface/definitions.js";
 import criticalHandler from "../util/criticalHandler.js";
 import { getEvents } from "../schema/functions.js";
 import { sqlIds, sqlMany } from "../util/sql.js";
@@ -19,7 +19,7 @@ export default class PollingTaskService extends Service {
     async getTaskQueue(lookBack = 30000) {
         return events.query({
             type: EventTypes.Task, 
-            status: EventStatus.Pending, 
+            status: EventStates.Pending, 
             before: new Date(),
             after: new Date().addMilliseconds(-lookBack)
         })
@@ -28,7 +28,7 @@ export default class PollingTaskService extends Service {
     async getExpiredTaskIds() {
         const query = getEvents({
             type: TaskTypes.values(),
-            status: [EventStatus.Pending, EventStatus.Ongoing],
+            status: [EventStates.Pending, EventStates.Ongoing],
             before: new Date().addMilliseconds(this.defaultTaskDuration)
         })
 
@@ -39,7 +39,7 @@ export default class PollingTaskService extends Service {
         this.repairTasks()
         
         for (const task of await this.getTaskQueue()) {
-            events.updateColumnId(task, events.status, EventStatus.Ongoing)
+            events.updateColumnId(task, events.status, EventStates.Ongoing)
             setTimeout(() => this.closeTask(task.id).catch(criticalHandler), this.defaultTaskDuration)
         }
     }
@@ -47,8 +47,8 @@ export default class PollingTaskService extends Service {
     async closeTask(taskId) {
         const task = await events.getId(taskId)
 
-        if (task.status !== EventStatus.Completed)
-            events.updateColumnId(task, events.status, EventStatus.Missed)
+        if (task.status !== EventStates.Completed)
+            events.updateColumnId(task, events.status, EventStates.Missed)
 
         if (task.interval_seconds)
             events.add(await task.getUpdateModel())
@@ -56,6 +56,6 @@ export default class PollingTaskService extends Service {
 
     async repairTasks() {
         for (const id of await this.getExpiredTaskIds())
-            events.updateColumnId({ id }, events.status, EventStatus.Missed)
+            events.updateColumnId({ id }, events.status, EventStates.Missed)
     }
 }

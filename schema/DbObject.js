@@ -63,14 +63,14 @@ export class DbTable extends DbObject {
     }
 
     async deleteId({ id }, transaction) {
-        const deleted = (await sqlDelete(this, transaction)`WHERE ${this.id} = ${id}`).recordset[0]
+        const deleted = (await sqlDelete(this, transaction)`WHERE ${this.id} = ${id}`)[0]
         deleted && this.emitDelete(deleted)
         return deleted
     }
 
     // todo refactor sql util
     async updateId({ id }, updates, transaction) {
-        const deleted = (await sqlUpdate(this, updates, transaction)`WHERE ${this.id} = ${id}`).recordset[0]
+        const deleted = (await sqlUpdate(this, updates, transaction)`WHERE ${this.id} = ${id}`)[0]
         deleted && this.emitUpdate(deleted, updates)
         return deleted
     }

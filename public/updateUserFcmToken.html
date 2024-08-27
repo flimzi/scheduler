@@ -10,63 +10,54 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js'
         import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js'
         
-        async function updateUserFcmToken() {
-            const params = new URLSearchParams(new URL(window.location.href).search)
-            const [ userId, fcmUpdateEndpoint, testEndpoint, accessToken ] = [ params.get('userId'), params.get('fcmUpdateEndpoint'), params.get('testEndpoint'), params.get('accessToken') ]
+        const fcmTokenEndpoint = '/api/user/current/fcmToken'
+        const testEndpoint = ''
 
-            if ([userId, fcmUpdateEndpoint, testEndpoint, accessToken].includes(undefined))
-                throw new Error()
+        const firebaseConfig = {
+            apiKey: 'AIzaSyDXK9ntNlAO06WLV2r4oJoneKyJxuCaXhQ',
+            authDomain: 'zwardon-12120.firebaseapp.com',
+            projectId: 'zwardon-12120',
+            storageBucket: 'zwardon-12120.appspot.com',
+            messagingSenderId: '784564826365',
+            appId: '1:784564826365:web:416361d6933884a0208e94'
+        }
+    
+        const app = initializeApp(firebaseConfig)
+        const messaging = getMessaging(app)
+        const permission = await Notification.requestPermission()
 
-            const firebaseConfig = {
-                apiKey: 'AIzaSyDXK9ntNlAO06WLV2r4oJoneKyJxuCaXhQ',
-                authDomain: 'zwardon-12120.firebaseapp.com',
-                projectId: 'zwardon-12120',
-                storageBucket: 'zwardon-12120.appspot.com',
-                messagingSenderId: '784564826365',
-                appId: '1:784564826365:web:416361d6933884a0208e94'
-            }
-        
-            const app = initializeApp(firebaseConfig)
-            const messaging = getMessaging(app)
-            const permission = await Notification.requestPermission()
+        if (permission !== 'granted')
+            throw new Error('notification permission not granted')
 
-            if (permission !== 'granted')
-                throw new Error()
+        onMessage(messaging, handleMessage)
 
-            onMessage(messaging, handleMessage)
-
+        window.getFcmToken = async function getFcmToken() {
             const token = await getToken(messaging, { vapidKey: 'BFmnKydepWdCfhzgp5pgZyoUcHA1PxAaptYk9Hw_SBAhiw2yajiVUINUQ7IathPmR6bcLI72xceaqYk7trYVYvo' })
 
             if (!token)
-                throw new Error()
+                throw new Error('token fetch error')
 
-            // only do this on app startup
-            const updateResponse = await fetch(atob(fcmUpdateEndpoint), {
+            return token
+        }
+
+        window.updateUserFcmToken = async function updateUserFcmToken(accessToken) {
+            const updateResponse = await fetch(fcmTokenEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain',
                     'Authorization': 'Bearer ' + accessToken
                 },
-                body: token
+                body: await getFcmToken()
             })
 
             if (!updateResponse.ok)
-                throw new Error()
+                throw new Error('update endpoint error ' + updateResponse.status)
 
-            const testUrl = new URL(atob(testEndpoint))
-            testUrl.searchParams.append('token', token)
-            testUrl.searchParams.append('repeat', 10)
-            
-            const messageResponse = await fetch(testUrl.toString(), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + accessToken
-                },
-                body: JSON.stringify({ test1: 'test1', test2: 'test2' })
-            })
+            return true
+        }
 
-            console.log(messageResponse)
+        window.testUserFcm = async function testUserFcm(acessToken) {
+            // todo
         }
 
         function handleMessage(payload) {
@@ -74,7 +65,10 @@
             new Notification(payload.notification.title, { body: payload.notification.body })
         }
 
-        await updateUserFcmToken()
+        const params = new URL(window.location.href).searchParams
+        const accessToken = params.get('accessToken')
+        
+
     </script>
 </body>
 </html>

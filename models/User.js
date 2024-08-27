@@ -2,15 +2,17 @@ import { fakerPL as faker } from '@faker-js/faker'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import transporter from '../config/mail.js'
-import FCMessaging from '../firebase/FCMessaging.js'
+import FCMessaging from '../firebase/FirebaseCloudMessage.js'
 import { Genders } from '../interface/definitions.js'
 import strings from '../resources/strings.en.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
-import { getEvents, getPrimaries, getSecondaries } from '../schema/functions.js'
+import { getEvents, getPrimary, getSecondary } from '../schema/functions.js'
 import relationships from '../schema/Relationships.js'
 import users from '../schema/Users.js'
 import { sql, sqlInsert } from '../util/sql.js'
 import Model from './Model.js'
+import events from '../schema/Events.js'
+import FirebaseCloudMessage from '../firebase/FirebaseCloudMessage.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
@@ -144,15 +146,16 @@ export default class User extends Model {
     }
 
     async sendFCM(data) {
-        return FCMessaging.message({ data })
+        if (this.fcm_token)
+            return new FirebaseCloudMessage(this.fcm_token).data(data).send()
     }
 
-    async getPrimaries(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getPrimaries(this.id, relationshipTypes)}`
+    async getPrimary(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
     }
 
-    async getSecondaries(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getSecondaries(this.id, relationshipTypes)}`
+    async getSecondary(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getSecondary(this.id, relationshipTypes)}`
     }
 
     async relateToPrimary(primary, relationshipType, transaction) {
@@ -177,5 +180,11 @@ export default class User extends Model {
 
     async getGivenEvents({ receiverId, type, status }) {
         return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, status })}`
+    }
+
+    async addEventFor(receiver, event) {
+        event.giver_id = this.id
+        event.receiver_id = receiver.id
+        return event.add()
     }
 }

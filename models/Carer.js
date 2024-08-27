@@ -38,4 +38,8 @@ export default class Carer extends User {
 
         return model
     }
+
+    async relateToPrimary(primary, relationshipType, transaction) {
+        return
+    }
 }

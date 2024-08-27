@@ -1,4 +1,4 @@
-import { createRequest } from "../util/sql.js"
+import { sqlSelect } from "../util/sql.js"
 import { DbColumn, DbTable } from "./DbObject.js"
 import { getEvents, substring } from "./functions.js"
 
@@ -26,7 +26,7 @@ class Events extends DbTable {
 
     async query({ giverId, receiverId, type, status, startBefore, startAfter, limit }) {
         const events = getEvents({ giverId, receiverId, type, status, startBefore, startAfter })
-        return createRequest().sqlSelect(events, this.abbreviatedEvents(), limit)`ORDER BY ${this.start_date}`
+        return sqlSelect(events, this.abbreviatedEvents(), limit)`ORDER BY ${this.start_date}`
     }
 }
 

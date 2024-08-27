@@ -17,7 +17,7 @@ export class HttpRequest {
     init = { headers: {} }
 
     constructor(url) {
-        this.url = new URL(url, baseUrl())
+        this.url = new URL(url, url[0] === '/' ? baseUrl() : undefined)
     }
 
     bearer(token) {
@@ -32,18 +32,24 @@ export class HttpRequest {
     }
 
     query(name, value) {
-        this.url.searchParams.append(name, value)
+        if (Array.isArray(value))
+            value.map(this.query.bind(this, name))
+        else
+            value !== undefined && this.url.searchParams.append(name, value)
+        
         return this
     }
 
     async fetch(method) {
         const init = { ...this.init, method }
         const url = this.url.toString()
-        console.log({ url, init, method })
-        
         const result = await fetch(url, init)
+        const text = await result.clone().text()
 
+        console.log({ url, init, method })
         console.log(result)
+        console.log(text)
+
         return result
     }
 

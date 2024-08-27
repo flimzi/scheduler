@@ -51,3 +51,8 @@ export function joinInts(valueOrValues) {
 
 export const getBearer = req => req.headers.authorization?.split(' ')[1]
 export const setBearer = token => 'Bearer ' + token
+
+export function stringifyValues(obj, maxDepth = 0) {
+    // return Object.entries(obj).reduce((acc, [key, val]) => { acc[key] = val.toString(); return acc }, {})
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'object' && maxDepth ? stringify(v, maxDepth - 1) : v.toString()]))
+}
