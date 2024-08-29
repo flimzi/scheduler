@@ -1,9 +1,11 @@
 // define server sent message types for http and fcm and ws
 
-export class ServerMessage {
+import FirebaseCloudMessage from "../firebase/FirebaseCloudMessage.js"
+
+export class ServerMessage extends FirebaseCloudMessage {
     constructor(type, fields = {}) {
-        this.type = type
-        Object.assign(this, fields)
+        super()
+        this.data({ type, ...fields })
     }
 }
 

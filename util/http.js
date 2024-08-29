@@ -1,5 +1,6 @@
 import fetch from "node-fetch"
 import { baseUrl, setBearer } from "./helpers.js"
+import { ServerResponse } from 'http'
 
 export class HttpStatus {
     static get Ok() { return 200 }
@@ -43,14 +44,14 @@ export class HttpRequest {
     async fetch(method) {
         const init = { ...this.init, method }
         const url = this.url.toString()
-        const result = await fetch(url, init)
-        const text = await result.clone().text()
+        const response = await fetch(url, init)
+        const text = await response.clone().text()
 
         console.log({ url, init, method })
-        console.log(result)
+        console.log(response)
         console.log(text)
 
-        return result
+        return response
     }
 
     post = () => this.fetch('POST')

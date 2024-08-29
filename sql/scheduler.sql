@@ -1,5 +1,5 @@
 CREATE TABLE [users] (
-	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
+	[id] int IDENTITY(1, 1) NOT NULL UNIQUE,
 	[role] int NOT NULL,
 	[created_at] datetime NOT NULL DEFAULT GETDATE(),
 	[email] nvarchar(450),
@@ -24,11 +24,12 @@ CREATE TABLE [relationships] (
 	[primary_id] int NOT NULL,
 	[secondary_id] int NOT NULL,
 	[type] int NOT NULL,
+	[pending] bit NOT NULL DEFAULT 1
 	PRIMARY KEY ([id])
 );
 
 CREATE TABLE [events] (
-	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
+	[id] int IDENTITY(1, 1) NOT NULL UNIQUE,
 	[type] int NOT NULL,
 	[status] int NOT NULL,
 	[giver_id] int NOT NULL,

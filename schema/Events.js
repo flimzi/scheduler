@@ -1,4 +1,4 @@
-import { sqlSelect } from "../util/sql.js"
+import { sqlSelect, sqlUpdate } from "../util/sql.js"
 import { DbColumn, DbTable } from "./DbObject.js"
 import { getEvents, substring } from "./functions.js"
 
@@ -31,4 +31,5 @@ class Events extends DbTable {
 }
 
 const events = new Events()
+events.onUpdate(({ deleted }) => sqlUpdate(events, { [events.modified_at.name]: new Date() })`WHERE ${events.id} = ${deleted.id}`)
 export default events

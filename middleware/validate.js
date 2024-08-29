@@ -1,8 +1,7 @@
-import { query, validationResult } from "express-validator"
+import { validationResult } from "express-validator"
 import { HttpStatus } from "../util/http.js"
-import check from "check-types"
 
-export function validate(req, res, next) {
+export const validate = (...validators) => (req, res, next) => {
     const errors = validationResult(req)
 
     if (!errors.isEmpty())

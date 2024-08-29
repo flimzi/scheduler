@@ -5,10 +5,8 @@ import criticalHandler from "../util/criticalHandler.js";
 import { getEvents } from "../schema/functions.js";
 import { sqlIds, sqlMany } from "../util/sql.js";
 
-// it would be better to for example on startup and every hour schedule tasks for the next hour by unique id using node-cron or node-scheduler
-// this could be updated in real time using DbTable.onChange
-// another method would query pending tasks that are in the past and would clean up those that should have completed - this could maybe run once every half an hour
-// (and for completeness also take action in the case of tasks still ongoing, like a reminder)
+// tasks could also be scheduled as they come in using node-cron or node-scheduler in SchedulingTaskService which contains the mapping of eventId to schedule
+// that could be updated in real time using DbTable.onChange
 export default class PollingTaskService extends Service {
     constructor({ pollInterval = 10000, defaultTaskDuration = 30000 }) {
         super()

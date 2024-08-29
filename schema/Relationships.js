@@ -24,7 +24,7 @@ class Relationships extends DbTable {
     }
 
     async add(primary, secondary, type = RelationshipTypes.Owner, transaction) {
-        if (!await this.exists(primary, secondary))
+        if (primary.id !== secondary.id && !await this.exists(primary, secondary))
             return sqlInsert(this, { primary_id: primary.id, secondary_id: secondary.id, type }, transaction)
     }
 }

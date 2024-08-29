@@ -3,6 +3,8 @@ import { User } from '../models/users.js'
 import users from '../schema/Users.js'
 import { getBearer, isJWT } from '../util/helpers.js'
 import { HttpStatus } from '../util/http.js'
+import { DbColumn } from '../schema/DbObject.js'
+import { sqlFirst } from '../util/sql.js'
 
 export const currentUserPlaceholder = 'current'
 
@@ -100,3 +102,15 @@ export const currentProperty = selector => (req, res, next) => authenticate(req,
 
     next()
 })
+
+export const getModel = (type, param, authPredicate) => async (req, res, next) => {
+    req.content = await sqlFirst(type.getTable(), type.getTable().getAbbreviatedColumns())`WHERE ${DbColumn.id} = ${req.params[param]}`.convert(type.getType)
+
+    if (!req.content)
+        return res.send(HttpStatus.NotFound)
+
+    if (check.function(authPredicate) && !authPredicate(req))
+        return res.send(HttpStatus.Unauthorized)
+
+    next()
+}

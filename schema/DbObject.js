@@ -22,6 +22,8 @@ export class DbColumn extends DbObject {
         super(name)
         this.validation = validation
     }
+
+    static id = new DbColumn('id')
 }
 
 export class DbTable extends DbObject {
@@ -62,13 +64,14 @@ export class DbTable extends DbObject {
         return sqlFirst(this)`WHERE ${this.id} = ${id}`
     }
 
+    // database events are only emitted in this class
+    // but it could instead be sqlDelete(dbTable) -> dbTable.emit(deletedArray)
     async deleteId({ id }, transaction) {
         const deleted = (await sqlDelete(this, transaction)`WHERE ${this.id} = ${id}`)[0]
         deleted && this.emitDelete(deleted)
         return deleted
     }
 
-    // todo refactor sql util
     async updateId({ id }, updates, transaction) {
         const deleted = (await sqlUpdate(this, updates, transaction)`WHERE ${this.id} = ${id}`)[0]
         deleted && this.emitUpdate(deleted, updates)
@@ -86,6 +89,8 @@ export class DbTable extends DbObject {
     getAbbreviatedColumns() {
         return this.getColumns()
     }
+
+    static deleted = new DbTable('@DeletedRows')
 }
 
 export class DbFunction extends DbObject {

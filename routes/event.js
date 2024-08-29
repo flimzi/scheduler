@@ -1,7 +1,7 @@
 import express from 'express'
 import { query } from 'express-validator'
 import { EventStates, EventTypes, RelationshipTypes } from '../interface/definitions.js'
-import { related } from '../middleware/auth.js'
+import { authenticate, getModel, getTargetUser, related } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import events from '../schema/Events.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
@@ -20,6 +20,7 @@ export class EventRoutes {
 }
 
 export class Parameters {
+    static get eventId() { return 'eventId' }
     static get giverId() { return 'giverId' }
     static get receiverId() { return 'receiverId' }
     static get type() { return 'type' }
@@ -33,21 +34,29 @@ router.post(EventRoutes.events(), related(false, false, RelationshipTypes.Carer,
     res.status(HttpStatus.Created).location(EventRoutes.event(req.targetUser.id, id)).send(id.toString())
 }))
 
-export const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
+const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
 
 router.get(EventRoutes.event(), related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner), asyncHandler(async (req, res) => {
     const event = await events.getId(req.params.eventId)
     return event ? res.send(event) : res.send(HttpStatus.NotFound)
 }))
 
-export const getEvent = (accessToken, userId, eventId) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
+const getEvent = (accessToken, userId, eventId) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
+
+router.put(EventRoutes.event(), authenticate, getModel(Event, Parameters.eventId, ({ content, user }) => content.giver_id === user.id), asyncHandler(async (req, res) => {
+    await req.content.update(req.body)
+    res.send()
+}))
+
+const putEvent = (accessToken, userId, eventId, newEvent) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).json(newEvent).put()
 
 router.get(
     EventRoutes.upcomingTasks(),
-    query(Parameters.giverId + '.*').toInt(),
-    query(Parameters.startBefore).optional().toDate(),
-    query(Parameters.startAfter).optional().toDate(),
-    validate,
+    validate(
+        query(Parameters.giverId + '.*').toInt(),
+        query(Parameters.startBefore).optional().toDate(),
+        query(Parameters.startAfter).optional().toDate(),
+    ),
     related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner),
     asyncHandler(async (req, res) => {
         const query = {
@@ -63,7 +72,7 @@ router.get(
     })
 )
 
-export const getUpcomingTasks = (accessToken, userId, { giverId, startBefore, startAfter } = {}) => 
+const getUpcomingTasks = (accessToken, userId, { giverId, startBefore, startAfter } = {}) => 
     new HttpRequest(ApiRoutes.upcomingTasks(userId))
         .bearer(accessToken)
         .query(Parameters.giverId, giverId)
@@ -73,8 +82,7 @@ export const getUpcomingTasks = (accessToken, userId, { giverId, startBefore, st
 
 router.get(
     EventRoutes.missedTasks(),
-    query(Parameters.giverId + '.*').toInt(),
-    validate,
+    validate(query(Parameters.giverId + '.*').toInt()),
     related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner),
     asyncHandler(async (req, res) => {
         const query = {
@@ -88,10 +96,11 @@ router.get(
     })
 )
 
-export const getMissedTasks = (accessToken, userId, giverId) =>
+const getMissedTasks = (accessToken, userId, giverId) =>
     new HttpRequest(ApiRoutes.missedTasks(userId))
         .bearer(accessToken)
         .query(Parameters.giverId, giverId)
         .fetch()
 
+export const eventActions = { postEvents, getEvent, putEvent, getUpcomingTasks, getMissedTasks }
 export default router

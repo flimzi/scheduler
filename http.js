@@ -7,6 +7,8 @@ import eventRoutes from './routes/event.js'
 import apiRoutes, { ApiRoutes } from './routes/api.js'
 import userRoutes from './routes/user.js'
 import relatedRoutes from './routes/related.js'
+import verificationRoutes from './routes/verification.js'
+import fcmRoutes from './routes/fcm.js'
 import { ArgumentError } from './util/errors.js'
 import { HttpStatus } from './util/http.js'
 
@@ -20,6 +22,8 @@ app.use(ApiRoutes.api, authRoutes)
 app.use(ApiRoutes.api, userRoutes)
 app.use(ApiRoutes.api, eventRoutes)
 app.use(ApiRoutes.api, relatedRoutes)
+app.use(ApiRoutes.api, verificationRoutes)
+app.use(ApiRoutes.api, fcmRoutes)
 
 app.use((err, req, res, next) => {
     console.error(err)

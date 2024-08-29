@@ -21,14 +21,12 @@ export default class Model {
         return this
     }
 
-    getTable() { }
+    static getTable() { }
+
+    getTable() { return Object.getPrototypeOf(this).constructor.getTable() }
 
     static from(init) {
         return this.convert(init, this.getType.bind(this))
-    }
-
-    to(type) {
-        return this.cast(this, type)
     }
 
     clone() {
@@ -39,8 +37,12 @@ export default class Model {
         return this.from(this)
     }
 
-    async getUpdateModel() {
+    async getInsertModel() {
         return this.clone(this)
+    }
+
+    async getUpdateModel() {
+        return this.getInsertModel()
     }
 
     async add(transaction) {
@@ -54,7 +56,7 @@ export default class Model {
     }
 
     async update(updates, transaction) {
-        return this.getTable()?.updateId(this, updates, transaction)
+        return this.getTable()?.updateId(this, await updates.cast(this.constructor).getUpdateModel(), transaction)
     }
 
     async updateColumn(dbColumn, value, transaction) {

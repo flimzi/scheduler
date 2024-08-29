@@ -16,13 +16,23 @@ export default class FirebaseCloudMessage {
         return client.getAccessToken().then(r => r.token)
     }
 
-    constructor(token) {
-        this.message = { token }
-    }
+    message = { }
 
     // https://firebase.google.com/docs/cloud-messaging/migrate-v1#update-the-payload-of-send-requests
+    static stringify(obj) {
+        return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : (v?.toString() ?? '')]))
+    }
+
+    static unstringify(obj) {
+        return Object.fromEntries(Object.entries(obj).map(([k, v]) => {
+            let nv = v
+            try { nv = JSON.parse(nv) } catch {}
+            return [k, nv]
+        }))
+    }
+
     data(obj) {
-        this.message.data = Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : (v?.toString() ?? '')]))
+        this.message.data = Object.assign({}, this.message.data ?? {}, FirebaseCloudMessage.stringify(obj))
         return this
     }
 
@@ -35,10 +45,17 @@ export default class FirebaseCloudMessage {
         return this
     }
 
-    async send() {
+    async send(token) {
         return new HttpRequest(FirebaseCloudMessage.endpoint)
-            .body(JSON.stringify({ message: this.message }), 'application/json')
+            .body(JSON.stringify({ message: { token, ...this.message} }), 'application/json')
             .bearer(await FirebaseCloudMessage.accessToken)
             .post()
+    }
+
+    async sendGetId(token) {
+        const response = await this.send(token)
+        
+        if (response.ok)
+            return response.json().then(r => r.name.split('/').at(-1))
     }
 }

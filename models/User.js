@@ -2,17 +2,15 @@ import { fakerPL as faker } from '@faker-js/faker'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import transporter from '../config/mail.js'
-import FCMessaging from '../firebase/FirebaseCloudMessage.js'
 import { Genders } from '../interface/definitions.js'
 import strings from '../resources/strings.en.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
 import { getEvents, getPrimary, getSecondary } from '../schema/functions.js'
 import relationships from '../schema/Relationships.js'
 import users from '../schema/Users.js'
-import { sql, sqlInsert } from '../util/sql.js'
+import { ArgumentError } from '../util/errors.js'
+import { sql, sqlInsert, sqlSelect } from '../util/sql.js'
 import Model from './Model.js'
-import events from '../schema/Events.js'
-import FirebaseCloudMessage from '../firebase/FirebaseCloudMessage.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
@@ -20,7 +18,7 @@ export default class User extends Model {
         super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
 
-    getTable() { return users }
+    static getTable() { return users }
 
     static async authenticate(token) {
         const accessToken = await AccessToken.verify(token)
@@ -145,13 +143,14 @@ export default class User extends Model {
         })
     }
 
-    async sendFCM(data) {
+    async sendFCM(fcm) {
         if (this.fcm_token)
-            return new FirebaseCloudMessage(this.fcm_token).data(data).send()
+            return fcm.data({ userId: this.id }).sendGetId(this.fcm_token)
     }
 
-    async getPrimary(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
+    async getPrimary(minimal = false, ...relationshipTypes) {
+        // return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
+        return sqlSelect(getPrimary(this.id, relationshipTypes), minimal ? users.minInfo() : [])()
     }
 
     async getSecondary(...relationshipTypes) {
@@ -159,6 +158,9 @@ export default class User extends Model {
     }
 
     async relateToPrimary(primary, relationshipType, transaction) {
+        if (primary instanceof User === false)
+            throw new ArgumentError()
+
         return relationships.add(primary, this, relationshipType, transaction)
     }
 

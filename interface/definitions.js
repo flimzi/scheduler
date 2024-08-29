@@ -3,8 +3,8 @@ export class Definition {
         return Object.random(this)
     }
 
-    static values() {
-        return Object.values(this)
+    static values(...except) {
+        return Object.values(this).filter(v => !except.includes(v))
     }
 
     static isValid(value) {

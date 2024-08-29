@@ -1,6 +1,6 @@
 import mssql from 'mssql'
 import pool from '../config/db.js'
-import DbObject, { DbFunction } from '../schema/DbObject.js'
+import DbObject, { DbColumn, DbFunction, DbTable } from '../schema/DbObject.js'
 
 export const createTransaction = () => new mssql.Transaction(pool)
 export const createRequest = transaction => new mssql.Request(transaction ?? pool)
@@ -82,7 +82,12 @@ mssql.Request.prototype.addParams = function(values) {
 }
 
 mssql.Request.prototype.addList = function(obj, delimiter = ',') {
-    return Object.entries(obj).map(([col, val]) => `${col.name ?? col} = ${this.addParam(val)}`).join(delimiter)
+    return Object.entries(obj).map(([col, val]) => `${col} = ${this.addParam(val)}`).join(delimiter)
+}
+
+mssql.Request.prototype.semicolon = function() {
+    this.command += ';'
+    return this
 }
 
 mssql.Request.prototype.parse = function(strings, ...values) {
@@ -91,7 +96,10 @@ mssql.Request.prototype.parse = function(strings, ...values) {
 }
 
 mssql.Request.prototype.sql = function(strings, ...values) {
-    return this.parse(strings, ...values).run().then(r => r.recordset)
+    if (strings !== undefined)
+        this.parse(strings, ...values)
+
+    return this.run().then(r => r.recordset)
 }
 
 mssql.Request.prototype.insert = function(dbTable, obj) {
@@ -105,8 +113,9 @@ mssql.Request.prototype.insert = function(dbTable, obj) {
     `.then(rs => rs[0])
 }
 
-// if we want to handle update diff when column values are complex in obj, we need to add , INSERTED.* 
-// and split recordset into 2 based on property name (inserted will presumably have a _New suffix)
+// because of this error there cannot be any triggers in the database so they need to be written as a function and
+// ran either in dbtable (preferred but adds complexity) or directly in dbtable children
+// https://stackoverflow.com/questions/13198476/cannot-use-update-with-output-clause-when-a-trigger-is-on-the-table
 mssql.Request.prototype.update = function(dbTable, obj) {
     Object.deleteUndefinedProperties(obj)
     this.parse`UPDATE ${dbTable} SET ${obj}`

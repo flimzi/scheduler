@@ -18,14 +18,14 @@ router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
     res.send(await User.login(req.body) ?? HttpStatus.Unauthorized)
 }))
 
-export const login = ({ email, password }) => new HttpRequest(ApiRoutes.login).json({ email, password }).post()
+const login = ({ email, password }) => new HttpRequest(ApiRoutes.login).json({ email, password }).post()
 
 router.get(AuthRoutes.logout, authenticate, asyncHandler(async (req, res) => {
     await req.user.logout()
     res.send()
 }))
 
-export const logout = accessToken => new HttpRequest(ApiRoutes.logout).bearer(accessToken).fetch()
+const logout = accessToken => new HttpRequest(ApiRoutes.logout).bearer(accessToken).fetch()
 
 router.post(AuthRoutes.verify, asyncHandler(async (req, res) => {
     if (!await User.verify(req.body.token))
@@ -34,7 +34,8 @@ router.post(AuthRoutes.verify, asyncHandler(async (req, res) => {
     res.send()
 }))
 
-export const verify = token => new HttpRequest(ApiRoutes.verify).post({ token }).post()
+const verify = token => new HttpRequest(ApiRoutes.verify).post({ token }).post()
 
+export const authActions = { login, logout, verify }
 export default router
 

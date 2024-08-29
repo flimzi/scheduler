@@ -13,8 +13,16 @@ firebase.initializeApp({
 })
 
 const messaging = firebase.messaging()
+const fcmConfirmEndpoint = '/api/fcm/confirm'
 
 messaging.onBackgroundMessage(payload => {
     console.log('background notification', payload)
-    self.registration.showNotification(payload.notification.title, { body: payload.notification.body })
+
+    fetch(fcmConfirmEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
 })

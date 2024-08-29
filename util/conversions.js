@@ -2,6 +2,7 @@ import { EventTypes, Roles } from '../interface/definitions.js'
 import { User, Carer, Patient } from '../models/users.js'
 import Task from '../models/Task.js'
 import Event from '../models/Event.js'
+import { ArgumentError } from './errors.js'
 
 User.getType = function({ role }) {
     switch (role) {
@@ -11,7 +12,8 @@ User.getType = function({ role }) {
             return Patient
     }
 
-    return User
+    throw new ArgumentError('wrong user')
+    // return User
 }
 
 Event.getType = function({ type }) {
