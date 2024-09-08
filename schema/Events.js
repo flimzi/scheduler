@@ -9,7 +9,7 @@ class Events extends DbTable {
 
     id = new DbColumn('id')
     type = new DbColumn('type')
-    status = new DbColumn('status')
+    state = new DbColumn('state')
     giver_id = new DbColumn('giver_id')
     receiver_id = new DbColumn('receiver_id')
     info = new DbColumn('info')
@@ -24,8 +24,8 @@ class Events extends DbTable {
         return columns
     }
 
-    async query({ giverId, receiverId, type, status, startBefore, startAfter, limit }) {
-        const events = getEvents({ giverId, receiverId, type, status, startBefore, startAfter })
+    async query({ giverId, receiverId, type, state, startBefore, startAfter, limit }) {
+        const events = getEvents({ giverId, receiverId, type, state, startBefore, startAfter })
         return sqlSelect(events, this.abbreviatedEvents(), limit)`ORDER BY ${this.start_date}`
     }
 }

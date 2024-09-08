@@ -1,6 +1,6 @@
 import check from 'check-types'
 import { EventTypes } from '../interface/definitions.js'
-import { TaskStatusMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
+import { TaskStateMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
 import User from '../models/User.js'
 import events from '../schema/Events.js'
 import users from '../schema/Users.js'
@@ -51,8 +51,8 @@ export default class UserMessageService extends Service {
             case EventTypes.Task:
                 // only the values provided in the update object are present in inserted because it doesnt fully output the record
                 // but if it did we would check deleted.status !== inserted.status
-                const message = deleted.status !== undefined
-                    ? new TaskStatusMessage(inserted)
+                const message = deleted.state !== undefined
+                    ? new TaskStateMessage(inserted)
                     : new TaskUpdateMessage(inserted.id, inserted)
 
                 this.sendToUserAndPrimary(inserted.receiver_id, message)

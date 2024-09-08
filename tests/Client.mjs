@@ -1,4 +1,4 @@
-import { TaskStatusMessage, TaskUpdateMessage } from "../interface/ServerMessage.js"
+import { TaskStateMessage, TaskUpdateMessage } from "../interface/ServerMessage.js"
 import User from "../models/User.js"
 import { authActions } from "../routes/auth.js"
 import { eventActions } from "../routes/event.js"
@@ -68,14 +68,14 @@ export default class Client extends User {
 
     processFCM(serverMessage) {
         return {
-            [TaskStatusMessage.type]: this.processTaskStatusMessage,
+            [TaskStateMessage.type]: this.processTaskStatusMessage,
             [TaskUpdateMessage.type]: this.processTaskUpdateMessage,
         }[serverMessage.type]?.(serverMessage)
     }
 
     // couldnt these two things be like the same?
     processTaskStatusMessage(serverMessage) {
-        console.log('task status update', serverMessage)
+        console.log('task state update', serverMessage)
     }
 
     processTaskUpdateMessage(serverMessage) {

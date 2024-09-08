@@ -9,11 +9,11 @@ export class ServerMessage extends FirebaseCloudMessage {
     }
 }
 
-export class TaskStatusMessage extends ServerMessage {
+export class TaskStateMessage extends ServerMessage {
     static type = 1
 
     constructor(task) {
-        super(TaskStatusMessage.type, { task })
+        super(TaskStateMessage.type, { task })
     }
 }
 

@@ -24,7 +24,7 @@ export class Parameters {
     static get giverId() { return 'giverId' }
     static get receiverId() { return 'receiverId' }
     static get type() { return 'type' }
-    static get status() { return 'status' }
+    static get state() { return 'state' }
     static get startBefore() { return 'startBefore' }
     static get startAfter() { return 'startAfter' }
 }
@@ -66,7 +66,7 @@ router.get(
             startBefore: req.query[Parameters.startBefore],
             startAfter: req.query[Parameters.startAfter],
             type: TaskTypes.values(),
-            status: EventStates.Pending,
+            state: EventStates.Pending,
         }
 
         res.send(await events.query(query))
@@ -90,7 +90,7 @@ router.get(
             receiverId: req.targetUser.id,
             giverId: req.query[Parameters.giverId],
             type: TaskTypes.values(),
-            status: EventStates.Missed
+            state: EventStates.Missed
         }
 
         res.send(await events.query(query))

@@ -17,7 +17,7 @@ export default class PollingTaskService extends Service {
     async getTaskQueue(lookBack = 30000) {
         return events.query({
             type: EventTypes.Task, 
-            status: EventStates.Pending, 
+            state: EventStates.Pending, 
             before: new Date(),
             after: new Date().addMilliseconds(-lookBack)
         })
@@ -26,7 +26,7 @@ export default class PollingTaskService extends Service {
     async getExpiredTaskIds() {
         const query = getEvents({
             type: TaskTypes.values(),
-            status: [EventStates.Pending, EventStates.Ongoing],
+            state: [EventStates.Pending, EventStates.Ongoing],
             before: new Date().addMilliseconds(this.defaultTaskDuration)
         })
 
@@ -37,7 +37,7 @@ export default class PollingTaskService extends Service {
         this.repairTasks()
         
         for (const task of await this.getTaskQueue()) {
-            events.updateColumnId(task, events.status, EventStates.Ongoing)
+            events.updateColumnId(task, events.state, EventStates.Ongoing)
             setTimeout(() => this.closeTask(task.id).catch(criticalHandler), this.defaultTaskDuration)
         }
     }
@@ -45,8 +45,8 @@ export default class PollingTaskService extends Service {
     async closeTask(taskId) {
         const task = await events.getId(taskId)
 
-        if (task.status !== EventStates.Completed)
-            events.updateColumnId(task, events.status, EventStates.Missed)
+        if (task.state !== EventStates.Completed)
+            events.updateColumnId(task, events.state, EventStates.Missed)
 
         if (task.interval_seconds)
             events.add(await task.getUpdateModel())
@@ -54,6 +54,6 @@ export default class PollingTaskService extends Service {
 
     async repairTasks() {
         for (const id of await this.getExpiredTaskIds())
-            events.updateColumnId({ id }, events.status, EventStates.Missed)
+            events.updateColumnId({ id }, events.state, EventStates.Missed)
     }
 }

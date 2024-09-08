@@ -31,7 +31,7 @@ CREATE TABLE [relationships] (
 CREATE TABLE [events] (
 	[id] int IDENTITY(1, 1) NOT NULL UNIQUE,
 	[type] int NOT NULL,
-	[status] int NOT NULL,
+	[state] int NOT NULL,
 	[giver_id] int NOT NULL,
 	[receiver_id] int NOT NULL,
 	[info] nvarchar(4000),
@@ -62,7 +62,7 @@ CREATE INDEX [idx_users_verification_token] ON [users] ([verification_token])
 
 CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
 CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
-CREATE INDEX [idx_events_queue] ON [events] ([id], [type], [status], [start_date])
+CREATE INDEX [idx_events_queue] ON [events] ([id], [type], [state], [start_date])
 
 CREATE INDEX [idx_relationships_primary_id] ON [relationships] ([primary_id])
 CREATE INDEX [idx_relationships_secondary_id] ON [relationships] ([secondary_id])

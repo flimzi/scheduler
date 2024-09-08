@@ -178,12 +178,12 @@ export default class User extends Model {
         return relationships.exists(primary, this, ...relationshipTypes)
     }
 
-    async getReceivedEvents({ giverId, type, status }) {
-        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, status})}`
+    async getReceivedEvents({ giverId, type, state }) {
+        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, state})}`
     }
 
-    async getGivenEvents({ receiverId, type, status }) {
-        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, status })}`
+    async getGivenEvents({ receiverId, type, state }) {
+        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, state })}`
     }
 
     async addEventFor(receiver, event) {

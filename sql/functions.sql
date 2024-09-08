@@ -30,7 +30,7 @@ CREATE OR ALTER FUNCTION GetEvents(
 	@GiverIds NVARCHAR(100) = NULL,
 	@ReceiverIds NVARCHAR(100) = NULL, 
 	@Types NVARCHAR(20) = NULL,
-	@Statuses NVARCHAR(20) = NULL,
+	@States NVARCHAR(20) = NULL,
 	@StartBefore DATETIME = NULL,
 	@StartAfter DATETIME = NULL
 )
@@ -51,8 +51,8 @@ AS RETURN
 		[type] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Types, ','))
 	)
 	AND (
-		@Statuses IS NULL OR
-		[status] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@Statuses, ','))
+		@States IS NULL OR
+		[state] IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@States, ','))
 	)
 	AND (
 		@StartBefore IS NULL OR
