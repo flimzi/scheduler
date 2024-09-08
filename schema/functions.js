@@ -6,7 +6,7 @@ export function getParents(userId, ...relationshipTypes) {
     return new DbFunction('GetParents', userId, joinInts(relationshipTypes) ?? null)
 }
 
-export function getParents(userId, ...relationshipTypes) {
+export function getChildren(userId, ...relationshipTypes) {
     return new DbFunction('GetChildren', userId, joinInts(relationshipTypes) ?? null)
 }
 
