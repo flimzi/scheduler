@@ -70,20 +70,22 @@ httpServer.listen(port, async () => {
     // }
 
     // const task = Task.everyMinute(carer.id, patient.id)
-    await new Promise(r => setTimeout(r, 2500))
+    // await new Promise(r => setTimeout(r, 2500))
 
-    const carer = await Client.create(Roles.Carer)
-    await carer.login()
-    const patient = await carer.createSecondary(Roles.Patient)
-    const task = await carer.addTaskFor(patient, Task.everyMinute())
+    // const carer = await Client.create(Roles.Carer)
+    // await carer.login()
+    // const patient = await carer.createSecondary(Roles.Patient)
+    // const task = await carer.addTaskFor(patient, Task.everyMinute())
 
-    console.log(task)
+    // console.log(task)
 
-    await new Promise(r => setTimeout(r, 2500))
+    // await new Promise(r => setTimeout(r, 2500))
 
-    task.info = faker.company.catchPhrase()
-    await eventActions.putEvent(carer.accessToken, patient.id, task.id, task).then(r => assert(r.ok))
+    // task.info = faker.company.catchPhrase()
+    // await eventActions.putEvent(carer.accessToken, patient.id, task.id, task).then(r => assert(r.ok))
 
-    await new Promise(r => setTimeout(r, 2500))
-    console.log(UserMessageService.unconfirmed)
+    // await new Promise(r => setTimeout(r, 2500))
+    // console.log(UserMessageService.unconfirmed)
+
+    
 })

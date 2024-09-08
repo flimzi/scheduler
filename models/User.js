@@ -45,12 +45,12 @@ export default class User extends Model {
 
     static async login({ email, password }) {
         if (!email || !password)
-            return undefined
+            return
 
         const user = await users.getByEmail(email)
 
         if (!user?.verified || !await bcrypt.compare(password, user.password))
-            return undefined
+            return
     
         return user.generateAccessToken()
     }
@@ -123,6 +123,8 @@ export default class User extends Model {
         if (user.password)
             user.password = await bcrypt.hash(user.password, 10)
 
+        user.first_name = user.first_name?.toLettersOnly().capitalFirst()
+        user.last_name = user.last_name?.toLettersOnly().capitalFirst()
         return user
     }
 

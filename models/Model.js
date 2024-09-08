@@ -7,14 +7,13 @@ export default class Model {
     }
 
     static cast(init, type) {
-        if (init === undefined)
-            return undefined
-
-        return new type(init)
+        if (init)
+            return new type(init)
     }
 
     static convert(init, getType) {
-        return this.cast(init, getType(init))
+        if (init)
+            return this.cast(init, getType(init))
     }
 
     static getType(init) {

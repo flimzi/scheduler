@@ -59,5 +59,6 @@ export class EventStates extends Definition {
 }
 
 export class TaskTypes extends Definition {
+    static Task = EventTypes.Task
     static Test = EventTypes.Task + 1
 }

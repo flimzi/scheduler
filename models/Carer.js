@@ -31,10 +31,8 @@ export default class Carer extends User {
             throw new ArgumentError(`user ${this.email} already exists`, HttpStatus.Conflict)
 
         const model = await super.getUpdateModel()
-        model.first_name = model.first_name?.toLettersOnly().capitalFirst()
-        model.last_name = model.last_name?.toLettersOnly().capitalFirst()
         model.verified = !!process.env.DEBUG
-        model.role = Roles.Carer
+        // model.role = Roles.Carer
 
         return model
     }

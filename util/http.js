@@ -1,6 +1,5 @@
 import fetch from "node-fetch"
 import { baseUrl, setBearer } from "./helpers.js"
-import { ServerResponse } from 'http'
 
 export class HttpStatus {
     static get Ok() { return 200 }

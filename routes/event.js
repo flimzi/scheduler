@@ -1,6 +1,6 @@
 import express from 'express'
 import { query } from 'express-validator'
-import { EventStates, EventTypes, RelationshipTypes } from '../interface/definitions.js'
+import { EventStates, EventTypes, RelationshipTypes, TaskTypes } from '../interface/definitions.js'
 import { authenticate, getModel, getTargetUser, related } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import events from '../schema/Events.js'
@@ -43,6 +43,7 @@ router.get(EventRoutes.event(), related(true, false, RelationshipTypes.Carer, Re
 
 const getEvent = (accessToken, userId, eventId) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
 
+// with getmodel no need for including userId in the route, actually would be easier for the client to go without it
 router.put(EventRoutes.event(), authenticate, getModel(Event, Parameters.eventId, ({ content, user }) => content.giver_id === user.id), asyncHandler(async (req, res) => {
     await req.content.update(req.body)
     res.send()
@@ -64,7 +65,7 @@ router.get(
             giverId: req.query[Parameters.giverId],
             startBefore: req.query[Parameters.startBefore],
             startAfter: req.query[Parameters.startAfter],
-            type: EventTypes.Task,
+            type: TaskTypes.values(),
             status: EventStates.Pending,
         }
 
@@ -88,7 +89,7 @@ router.get(
         const query = {
             receiverId: req.targetUser.id,
             giverId: req.query[Parameters.giverId],
-            type: EventTypes.Task,
+            type: TaskTypes.values(),
             status: EventStates.Missed
         }
 

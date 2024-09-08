@@ -4,7 +4,7 @@ import { baseUrl } from '../util/helpers.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
 import { HttpStatus, HttpRequest } from '../util/http.js'
 import { ApiRoutes } from './api.js'
-import { authenticate } from '../middleware/auth.js'
+import { authenticate, getCurrentUser } from '../middleware/auth.js'
 const router = express.Router()
 
 export class AuthRoutes {
@@ -14,7 +14,8 @@ export class AuthRoutes {
     static get verify() { return this.auth + '/verify' }
 }
 
-router.post(AuthRoutes.login, asyncHandler(async (req, res) => {
+router.post(AuthRoutes.login, getCurrentUser, asyncHandler(async (req, res) => {
+    req.user?.logout()
     res.send(await User.login(req.body) ?? HttpStatus.Unauthorized)
 }))
 
@@ -28,13 +29,13 @@ router.get(AuthRoutes.logout, authenticate, asyncHandler(async (req, res) => {
 const logout = accessToken => new HttpRequest(ApiRoutes.logout).bearer(accessToken).fetch()
 
 router.post(AuthRoutes.verify, asyncHandler(async (req, res) => {
-    if (!await User.verify(req.body.token))
+    if (!await User.verify(req.body))
         return res.sendStatus(403)
 
     res.send()
 }))
 
-const verify = token => new HttpRequest(ApiRoutes.verify).post({ token }).post()
+const verify = token => new HttpRequest(ApiRoutes.verify).text(token).post().post()
 
 export const authActions = { login, logout, verify }
 export default router
