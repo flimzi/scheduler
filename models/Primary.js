@@ -5,8 +5,8 @@ import { isStrongPassword, isValidEmail } from '../util/helpers.js'
 import { HttpStatus } from '../util/http.js'
 import { User } from './users.js'
 
-export default class Carer extends User {
-    role = Roles.Carer
+export default class Primary extends User {
+    role = Roles.Primary
 
     async add(transaction) {
         const carer = await super.add(transaction)

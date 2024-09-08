@@ -2,8 +2,8 @@ import users from '../schema/Users.js'
 import { Roles } from '../interface/definitions.js'
 import { User } from './users.js'
 
-export default class Patient extends User {
-    role = Roles.Patient
+export default class Secondary extends User {
+    role = Roles.Secondary
 
     async getUpdateModel() {
         const model = super.getUpdateModel()
@@ -12,7 +12,7 @@ export default class Patient extends User {
         delete model.verification_token
         model.first_name = model.first_name?.toLettersOnly().capitalFirst()
         model.last_name = model.last_name?.toLettersOnly().capitalFirst()
-        model.role = Roles.Patient
+        model.role = Roles.Secondary
         model.verified = true
 
         return model

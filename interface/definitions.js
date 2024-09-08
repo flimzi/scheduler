@@ -13,8 +13,8 @@ export class Definition {
 }
 
 export class Roles extends Definition {
-    static Carer = 1
-    static Patient = 2
+    static Primary = 1
+    static Secondary = 2
 }
 
 export class Genders extends Definition {

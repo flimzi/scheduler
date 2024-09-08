@@ -1,5 +1,5 @@
 import express from 'express'
-import { Carer, User } from '../models/users.js'
+import { Primary, User } from '../models/users.js'
 import { baseUrl } from '../util/helpers.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
 import { HttpStatus, HttpRequest } from '../util/http.js'
