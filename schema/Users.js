@@ -1,5 +1,5 @@
 import User from '../models/User.js'
-import { sqlExists, sqlFirst } from '../util/sql.js'
+import { sql, sqlExists, sqlFirst } from '../util/sql.js'
 import { DbTable, DbColumn } from './DbObject.js'
 
 class Users extends DbTable {
@@ -43,6 +43,12 @@ class Users extends DbTable {
 
     async emailExists(email) {
         return sqlExists(this)`WHERE ${this.email} = ${email}`
+    }
+
+    async deleteId({ id }, transaction) {
+        // this is a workaround using a trigger procedure but ideally the deleted records would be emitted (using function)
+        // also im not sure how to use a transaction here
+        return sql`EXEC DeleteUser @UserId = ${id}`
     }
 }
 
