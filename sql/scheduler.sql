@@ -21,8 +21,8 @@ CREATE TABLE [users] (
 
 CREATE TABLE [relationships] (
 	[id] int IDENTITY(1,1) NOT NULL UNIQUE,
-	[primary_id] int NOT NULL,
-	[secondary_id] int NOT NULL,
+	[parent_id] int NOT NULL,
+	[child_id] int NOT NULL,
 	[type] int NOT NULL,
 	[pending] bit NOT NULL DEFAULT 1
 	PRIMARY KEY ([id])
@@ -48,8 +48,8 @@ CREATE TABLE [access_tokens] (
 	[hash] nvarchar(450) NOT NULL
 )
 
-ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([primary_id]) REFERENCES [users]([id]);
-ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk2] FOREIGN KEY ([secondary_id]) REFERENCES [users]([id]);
+ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([parent_id]) REFERENCES [users]([id]);
+ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk2] FOREIGN KEY ([child_id]) REFERENCES [users]([id]);
 
 ALTER TABLE [events] ADD CONSTRAINT [events_fk3] FOREIGN KEY ([giver_id]) REFERENCES [users]([id]);
 ALTER TABLE [events] ADD CONSTRAINT [events_fk4] FOREIGN KEY ([receiver_id]) REFERENCES [users]([id]);
@@ -64,8 +64,8 @@ CREATE INDEX [idx_events_giver_id] ON [events] ([giver_id], [start_date])
 CREATE INDEX [idx_events_receiver_id] ON [events] ([receiver_id], [start_date])
 CREATE INDEX [idx_events_queue] ON [events] ([id], [type], [state], [start_date])
 
-CREATE INDEX [idx_relationships_primary_id] ON [relationships] ([primary_id])
-CREATE INDEX [idx_relationships_secondary_id] ON [relationships] ([secondary_id])
+CREATE INDEX [idx_relationships_parent_id] ON [relationships] ([parent_id])
+CREATE INDEX [idx_relationships_child_id] ON [relationships] ([child_id])
 CREATE INDEX [idx_relationships_type] ON [relationships] ([type])
 
 CREATE INDEX [idx_access_tokens_user_id_hash] ON [access_tokens] ([user_id], [hash])

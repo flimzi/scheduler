@@ -37,7 +37,7 @@ export default class Carer extends User {
         return model
     }
 
-    async relateToPrimary(primary, relationshipType, transaction) {
+    async addParent(parent, relationshipType, transaction) {
         return
     }
 }

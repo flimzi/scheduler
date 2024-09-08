@@ -7,13 +7,13 @@ AS BEGIN
     DECLARE @OwnedUserIds TABLE (id INT)
     INSERT INTO @OwnedUserIds (id)
     SELECT u.id FROM users u
-    JOIN relationships r ON u.id = r.secondary_id
-    WHERE r.type = 1 AND r.primary_id IN (SELECT id FROM DELETED);
+    JOIN relationships r ON u.id = r.child_id
+    WHERE r.type = 1 AND r.parent_id IN (SELECT id FROM DELETED);
 
     -- delete orphaned relationships
     DELETE FROM relationships 
-    WHERE primary_id IN (SELECT id FROM DELETED)
-    OR secondary_id IN (SELECT id FROM DELETED);
+    WHERE parent_id IN (SELECT id FROM DELETED)
+    OR child_id IN (SELECT id FROM DELETED);
 
     -- delete events
     DELETE FROM events
@@ -38,13 +38,13 @@ AS BEGIN
     DECLARE @OwnedUserIds TABLE (id INT)
     INSERT INTO @OwnedUserIds (id)
     SELECT u.id FROM users u
-    JOIN relationships r ON u.id = r.secondary_id
-    WHERE r.type = 1 AND r.primary_id = @UserId;
+    JOIN relationships r ON u.id = r.child_id
+    WHERE r.type = 1 AND r.parent_id = @UserId;
 
     -- delete orphaned relationships
     DELETE FROM relationships 
-    WHERE primary_id = @UserId
-    OR secondary_id = @UserId;
+    WHERE parent_id = @UserId
+    OR child_id = @UserId;
 
     -- delete events
     DELETE FROM events

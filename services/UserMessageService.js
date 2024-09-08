@@ -41,7 +41,7 @@ export default class UserMessageService extends Service {
     async onEventsInsert({ inserted }) {
         switch (inserted.type) {
             case EventTypes.Task:
-                this.sendToUserAndPrimary(inserted.receiver_id, new TaskUpdateMessage(inserted.id, inserted))
+                this.sendToUserAndParents(inserted.receiver_id, new TaskUpdateMessage(inserted.id, inserted))
                 break
         }
     }
@@ -55,7 +55,7 @@ export default class UserMessageService extends Service {
                     ? new TaskStateMessage(inserted)
                     : new TaskUpdateMessage(inserted.id, inserted)
 
-                this.sendToUserAndPrimary(inserted.receiver_id, message)
+                this.sendToUserAndParents(inserted.receiver_id, message)
                 break
         }
     }
@@ -63,7 +63,7 @@ export default class UserMessageService extends Service {
     async onEventsDelete({ deleted }) {
         switch (deleted.type) {
             case EventTypes.Task:
-                this.sendToUserAndPrimary(deleted.receiver_id, new TaskUpdateMessage(deleted.id))
+                this.sendToUserAndParents(deleted.receiver_id, new TaskUpdateMessage(deleted.id))
                 break
         }
     }
@@ -83,11 +83,11 @@ export default class UserMessageService extends Service {
 
     // this could be in base and the rest in UserTaskMessageService
     // todo not send to giver when not needed
-    async sendToUserAndPrimary(userId, fcm) {
+    async sendToUserAndParents(userId, fcm) {
         const user = await users.getId(userId)
         this.sendTo(user, fcm)
 
-        for (const primary of await user.getPrimary())
-            this.sendTo(primary.cast(User), fcm)
+        for (const parent of await user.getParents())
+            this.sendTo(parent.cast(User), fcm)
     }
 }

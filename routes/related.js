@@ -12,8 +12,8 @@ const router = express.Router()
 
 export class RelatedRoutes {
     static related = userId => UserRoutes.user(userId) + '/related'
-    static primary = userId => this.related(userId) + '/primary'
-    static secondary = userId => this.related(userId) + '/secondary'
+    static parents = userId => this.related(userId) + '/parents'
+    static children = userId => this.related(userId) + '/children'
 }
 
 class Validations {
@@ -22,55 +22,55 @@ class Validations {
 }
 
 router.get(
-    RelatedRoutes.primary(), 
+    RelatedRoutes.parents(), 
     validate(Validations.types()),
     related(true, false, RelationshipTypes.Owner), 
-    asyncHandler(async (req, res) => res.send(await req.targetUser.getPrimary(req.query.type)))
+    asyncHandler(async (req, res) => res.send(await req.targetUser.getParents(req.query.type)))
 )
 
-const getPrimary = (accessToken, userId, ...types) => 
-    new HttpRequest(ApiRoutes.relatedPrimary(userId))
+const getParents = (accessToken, userId, ...types) => 
+    new HttpRequest(ApiRoutes.parents(userId))
         .bearer(accessToken)
         .query('type', types)
         .fetch()
 
 
 router.post(
-    RelatedRoutes.primary(),
+    RelatedRoutes.parents(),
     validate(Validations.type(RelationshipTypes.Owner), body().isJWT()),
     authenticate,
     getTargetUser,
     disallowSelf,
     asyncHandler(async (req, res) => {
-        const secondary = await User.authenticate(req.body)
+        const child = await User.authenticate(req.body)
 
-        if (secondary?.id !== req.targetUser.id)
+        if (child?.id !== req.targetUser.id)
             return res.send(HttpStatus.NotFound)
 
-        await secondary.relateToPrimary(req.user, req.query.type)
+        await child.addParent(req.user, req.query.type)
         res.send()
     })
 )
 
-const postPrimary = (accessToken, userId, secondaryAccessToken, type) =>
-    new HttpRequest(ApiRoutes.relatedPrimary(userId))
+const postParents = (accessToken, userId, childAccessToken, type) =>
+    new HttpRequest(ApiRoutes.parents(userId))
         .bearer(accessToken)
-        .text(secondaryAccessToken)
+        .text(childAccessToken)
         .query('type', type)
         .post()
 
 router.get(
-    RelatedRoutes.secondary(),
+    RelatedRoutes.children(),
     validate(Validations.types()),
     related(true, false, RelationshipTypes.Owner),
-    asyncHandler(async (req, res) => res.send(await req.targetUser.getSecondary(req.query.type)))
+    asyncHandler(async (req, res) => res.send(await req.targetUser.getChildren(req.query.type)))
 )
 
-const getSecondary = (accessToken, userId, ...types) =>
-    new HttpRequest(ApiRoutes.relatedSecondary(userId))
+const getChildren = (accessToken, userId, ...types) =>
+    new HttpRequest(ApiRoutes.children(userId))
         .bearer(accessToken)
         .query('type', types)
         .fetch()
 
-export const relatedActions = { getPrimary, postPrimary, getSecondary }
+export const relatedActions = { getParents, postParents, getChildren }
 export default router

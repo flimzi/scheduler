@@ -8,14 +8,14 @@ class Relationships extends DbTable {
     }
 
     id = new DbColumn('id')
-    primary_id = new DbColumn('primary_id')
-    secondary_id = new DbColumn('secondary_id')
+    parent_id = new DbColumn('parent_id')
+    child_id = new DbColumn('child_id')
     type = new DbColumn('type')
 
-    async exists(primary, secondary, ...types) {
+    async exists(parent, child, ...types) {
         const request = createRequest()
         request.parse`SELECT 1 FROM ${this}`
-        request.parse`WHERE ${this.primary_id} = ${primary.id} AND ${this.secondary_id} = ${secondary.id}`
+        request.parse`WHERE ${this.parent_id} = ${parent.id} AND ${this.child_id} = ${child.id}`
 
         if (types?.length)
             request.parse`AND ${this.type} IN (${types})`
@@ -23,9 +23,9 @@ class Relationships extends DbTable {
         return request.any()
     }
 
-    async add(primary, secondary, type = RelationshipTypes.Owner, transaction) {
-        if (primary.id !== secondary.id && !await this.exists(primary, secondary))
-            return sqlInsert(this, { primary_id: primary.id, secondary_id: secondary.id, type }, transaction)
+    async add(parent, child, type = RelationshipTypes.Owner, transaction) {
+        if (parent.id !== child.id && !await this.exists(parent, child))
+            return sqlInsert(this, { parent_id: parent.id, child_id: child.id, type }, transaction)
     }
 }
 

@@ -8,20 +8,20 @@ import UserMessageService from "../services/UserMessageService.js"
 import { assert } from "../util/helpers.js"
 
 export default class Client extends User {
-    primary = {}
-    secondary = {}
+    parents = {}
+    children = {}
     tasks = {}
     
-    static async create(role, primary) {
+    static async create(role, parent) {
         const user = User.getType({ role }).fake()
 
-        user.id = await userActions.postUsers(primary?.accessToken, user).then(r => {
+        user.id = await userActions.postUsers(parent?.accessToken, user).then(r => {
             assert(r.ok)
             return r.json()
         })
 
         const client = user.cast(Client)
-        client.owner = primary
+        client.owner = parent
         UserMessageService.onConfirmed(user.id, client.processFCM.bind(client))
         return client
     }
@@ -39,19 +39,19 @@ export default class Client extends User {
         await authActions.logout(this.accessToken).then(r => assert(r.ok))
     }
 
-    async createSecondary(role) {
+    async createChild(role) {
         const client = await Client.create(role, this)
         const tokenResponse = await userActions.getToken(this.accessToken, client.id)
         assert(tokenResponse.ok)
         client.accessToken = await tokenResponse.text()
-        this.secondary[client.id] = client
+        this.children[client.id] = client
         return client
     }
 
-    async addSecondary(client, relationshipType) {
-        await relatedActions.postPrimary(this.accessToken, client.id, client.accessToken, relationshipType).then(r => assert(r.ok))
-        client.primary[this.id] = this
-        this.secondary.push(client)
+    async addChild(client, relationshipType) {
+        await relatedActions.postParents(this.accessToken, client.id, client.accessToken, relationshipType).then(r => assert(r.ok))
+        client.parents[this.id] = this
+        this.children.push(client)
     }
 
     async addTaskFor(client, task) {

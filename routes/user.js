@@ -21,7 +21,7 @@ export class UserRoutes {
 router.post(UserRoutes.users, getCurrentUser, asyncHandler(async (req, res) => {
     const { result } = await sqlTransaction(async t => {
         const targetUser = await User.from(req.body).add(t)
-        await targetUser.relateToPrimary(req.user, RelationshipTypes.Owner, t)
+        await targetUser.addParent(req.user, RelationshipTypes.Owner, t)
         
         return targetUser
     })

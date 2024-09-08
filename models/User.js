@@ -5,7 +5,7 @@ import transporter from '../config/mail.js'
 import { Genders } from '../interface/definitions.js'
 import strings from '../resources/strings.en.js'
 import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
-import { getEvents, getPrimary, getSecondary } from '../schema/functions.js'
+import { getEvents, getParents, getChildren } from '../schema/functions.js'
 import relationships from '../schema/Relationships.js'
 import users from '../schema/Users.js'
 import { ArgumentError } from '../util/errors.js'
@@ -150,32 +150,31 @@ export default class User extends Model {
             return fcm.data({ userId: this.id }).sendGetId(this.fcm_token)
     }
 
-    async getPrimary(minimal = false, ...relationshipTypes) {
-        // return sql`SELECT ${users.minInfo()} FROM ${getPrimary(this.id, relationshipTypes)}`
-        return sqlSelect(getPrimary(this.id, relationshipTypes), minimal ? users.minInfo() : [])()
+    async getParents(minimal = false, ...relationshipTypes) {
+        return sqlSelect(getParents(this.id, relationshipTypes), minimal ? users.minInfo() : [])()
     }
 
-    async getSecondary(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getSecondary(this.id, relationshipTypes)}`
+    async getChildren(...relationshipTypes) {
+        return sql`SELECT ${users.minInfo()} FROM ${getChildren(this.id, relationshipTypes)}`
     }
 
-    async relateToPrimary(primary, relationshipType, transaction) {
-        if (primary instanceof User === false)
+    async addParent(parent, relationshipType, transaction) {
+        if (parent instanceof User === false)
             throw new ArgumentError()
 
-        return relationships.add(primary, this, relationshipType, transaction)
+        return relationships.add(parent, this, relationshipType, transaction)
     }
 
-    async relateToSecondary(secondary, relationshipType, transaction) {
-        return relationships.add(this, secondary, relationshipType, transaction)
+    async addChild(child, relationshipType, transaction) {
+        return relationships.add(this, child, relationshipType, transaction)
     }
 
-    async isPrimaryTo(secondary, ...relationshipTypes) {
-        return relationships.exists(this, secondary, ...relationshipTypes)
+    async isParentOf(child, ...relationshipTypes) {
+        return relationships.exists(this, child, ...relationshipTypes)
     }
 
-    async isSecondaryTo(primary, ...relationshipTypes) {
-        return relationships.exists(primary, this, ...relationshipTypes)
+    async isChildOf(parent, ...relationshipTypes) {
+        return relationships.exists(parent, this, ...relationshipTypes)
     }
 
     async getReceivedEvents({ giverId, type, state }) {

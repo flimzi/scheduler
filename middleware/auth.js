@@ -63,15 +63,15 @@ export const disallowSelf = (req, res, next) => {
     next()
 }
 
-export const related = (allowSelf = true, allowSecondary = true, ...relationshipTypes) => (req, res, next) => {
+export const related = (allowSelf = true, allowChild = true, ...relationshipTypes) => (req, res, next) => {
     authenticate(req, res, () => getTargetUser(req, res, () => {
         if (req.targetSelf)
             return !allowSelf ? res.send(HttpStatus.Unauthorized) : next()
     
-        if (!req.user.isPrimaryTo(req.targetUser, ...relationshipTypes) && !allowSecondary)
+        if (!req.user.isParentOf(req.targetUser, ...relationshipTypes) && !allowChild)
             return res.send(HttpStatus.Unauthorized)
 
-        if (!req.user.isSecondaryTo(req.targetUser, ...relationshipTypes))
+        if (!req.user.isChildOf(req.targetUser, ...relationshipTypes))
             return res.send(HttpStatus.Unauthorized)
 
         next()

@@ -26,8 +26,8 @@ export class ApiRoutes {
     static token = userId => this.api + UserRoutes.token(userId)
     static logoutAll = userId => this.api + UserRoutes.logoutAll(userId)
 
-    static relatedPrimary = userId => this.api + RelatedRoutes.primary(userId)
-    static relatedSecondary = userId => this.api + RelatedRoutes.secondary(userId)
+    static parents = userId => this.api + RelatedRoutes.parents(userId)
+    static children = userId => this.api + RelatedRoutes.children(userId)
 
     static event = (userId, eventId) => this.api + EventRoutes.event(userId, eventId)
     static events = userId => this.api + EventRoutes.events(userId)

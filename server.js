@@ -74,7 +74,7 @@ httpServer.listen(port, async () => {
 
     // const carer = await Client.create(Roles.Carer)
     // await carer.login()
-    // const patient = await carer.createSecondary(Roles.Patient)
+    // const patient = await carer.createChild(Roles.Patient)
     // const task = await carer.addTaskFor(patient, Task.everyMinute())
 
     // console.log(task)

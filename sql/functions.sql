@@ -1,25 +1,25 @@
-CREATE OR ALTER FUNCTION GetPrimary(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
+CREATE OR ALTER FUNCTION GetParents(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
 RETURNS TABLE 
 AS RETURN
 (
 	SELECT u.* FROM users u
 	INNER JOIN relationships r
-	ON r.primary_id = u.id
-	WHERE r.secondary_id = @UserId
+	ON r.parent_id = u.id
+	WHERE r.child_id = @UserId
 	AND (
 		@RelationshipTypes IS NULL
 		OR r.type IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@RelationshipTypes, ','))
 	)
 );
 
-CREATE OR ALTER FUNCTION GetSecondary(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
+CREATE OR ALTER FUNCTION GetChildren(@UserId INT, @RelationshipTypes NVARCHAR(20) = NULL)
 RETURNS TABLE 
 AS RETURN
 (
 	SELECT u.* FROM users u
 	INNER JOIN relationships r
-	ON r.secondary_id = u.id
-	WHERE r.primary_id = @UserId
+	ON r.child_id = u.id
+	WHERE r.parent_id = @UserId
 	AND (
 		@RelationshipTypes IS NULL
 		OR r.type IN (SELECT CAST(Value AS INT) FROM STRING_SPLIT(@RelationshipTypes, ','))
