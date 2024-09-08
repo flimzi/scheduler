@@ -1,11 +1,11 @@
 import { EventStates, EventTypes } from '../interface/definitions.js'
-import events from '../schema/Events.js'
+import dbEvents from '../schema/Events.js'
 import Model from './Model.js'
 
 export default class Event extends Model {
     state = EventStates.Pending
     
-    static getTable() { return events }
+    static getTable() { return dbEvents }
     
     constructor({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, duration_seconds, interval_seconds }) {
         super({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, duration_seconds, interval_seconds })

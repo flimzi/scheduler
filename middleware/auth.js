@@ -1,6 +1,6 @@
 import check from 'check-types'
 import { User } from '../models/users.js'
-import users from '../schema/Users.js'
+import dbUsers from '../schema/Users.js'
 import { getBearer, isJWT } from '../util/helpers.js'
 import { HttpStatus } from '../util/http.js'
 import { DbColumn } from '../schema/DbObject.js'
@@ -47,7 +47,7 @@ export const getTargetUser = async (req, res, next) => {
     }
 
     if (check.integer(Number(userId)))
-        req.targetUser = await users.getId(userId)
+        req.targetUser = await dbUsers.getId(userId)
 
     if (!req.targetUser)
         return res.send(HttpStatus.NotFound)

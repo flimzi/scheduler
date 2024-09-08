@@ -1,4 +1,4 @@
-import users from '../schema/Users.js'
+import dbUsers from '../schema/Users.js'
 import { Roles } from '../interface/definitions.js'
 import { User } from './users.js'
 

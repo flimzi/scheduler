@@ -1,24 +1,24 @@
 import mssql from 'mssql'
 import pool from '../config/db.js'
-import DbObject, { DbColumn, DbFunction, DbTable } from '../schema/DbObject.js'
+import DbObject, { DbFunction } from '../schema/DbObject.js'
 
 export const createTransaction = () => new mssql.Transaction(pool)
 export const createRequest = transaction => new mssql.Request(transaction ?? pool)
 
-mssql.Transaction.prototype.events = new EventTarget()
-mssql.Transaction.prototype.onCommit = function(listener) { this.events.addEventListener('commit', listener) }
-mssql.Transaction.prototype.onRollback = function(listener) { this.events.addEventListener('rollback', listener) }
+mssql.Transaction.prototype.completionEvents = new EventTarget()
+mssql.Transaction.prototype.onCommit = function(listener) { this.completionEvents.addEventListener('commit', listener) }
+mssql.Transaction.prototype.onRollback = function(listener) { this.completionEvents.addEventListener('rollback', listener) }
 
 mssql.Transaction.prototype.fail = async function() {
     await this.rollback()
     this.failed = this.completed = true
-    this.events.dispatchEvent(new CustomEvent('rollback'))
+    this.completionEvents.dispatchEvent(new CustomEvent('rollback'))
 }
 
 mssql.Transaction.prototype.complete = async function() {
     await this.commit()
     this.completed = true
-    this.events.dispatchEvent(new CustomEvent('commit'))
+    this.completionEvents.dispatchEvent(new CustomEvent('commit'))
 }
 
 // need to test this

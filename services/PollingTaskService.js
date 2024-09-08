@@ -1,5 +1,5 @@
 import Service from "./Service.js";
-import events from "../schema/Events.js";
+import dbEvents from "../schema/Events.js";
 import { EventStates, EventTypes, TaskTypes } from "../interface/definitions.js";
 import criticalHandler from "../util/criticalHandler.js";
 import { getEvents } from "../schema/functions.js";
@@ -15,7 +15,7 @@ export default class PollingTaskService extends Service {
     }
 
     async getTaskQueue(lookBack = 30000) {
-        return events.query({
+        return dbEvents.query({
             type: EventTypes.Task, 
             state: EventStates.Pending, 
             before: new Date(),
@@ -37,23 +37,23 @@ export default class PollingTaskService extends Service {
         this.repairTasks()
         
         for (const task of await this.getTaskQueue()) {
-            events.updateColumnId(task, events.state, EventStates.Ongoing)
+            dbEvents.updateColumnId(task, dbEvents.state, EventStates.Ongoing)
             setTimeout(() => this.closeTask(task.id).catch(criticalHandler), this.defaultTaskDuration)
         }
     }
 
     async closeTask(taskId) {
-        const task = await events.getId(taskId)
+        const task = await dbEvents.getId(taskId)
 
         if (task.state !== EventStates.Completed)
-            events.updateColumnId(task, events.state, EventStates.Missed)
+            dbEvents.updateColumnId(task, dbEvents.state, EventStates.Missed)
 
         if (task.interval_seconds)
-            events.add(await task.getUpdateModel())
+            dbEvents.add(await task.getUpdateModel())
     }
 
     async repairTasks() {
         for (const id of await this.getExpiredTaskIds())
-            events.updateColumnId({ id }, events.state, EventStates.Missed)
+            dbEvents.updateColumnId({ id }, dbEvents.state, EventStates.Missed)
     }
 }

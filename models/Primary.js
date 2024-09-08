@@ -1,5 +1,5 @@
 import { Roles } from '../interface/definitions.js'
-import users from '../schema/Users.js'
+import dbUsers from '../schema/Users.js'
 import { ArgumentError } from '../util/errors.js'
 import { isStrongPassword, isValidEmail } from '../util/helpers.js'
 import { HttpStatus } from '../util/http.js'
@@ -27,7 +27,7 @@ export default class Primary extends User {
         if (!process.env.DEBUG && !isStrongPassword(model.password))
             throw new ArgumentError(`${this.password} is not a strong password`)
 
-        if (await users.emailExists(this.email))
+        if (await dbUsers.emailExists(this.email))
             throw new ArgumentError(`user ${this.email} already exists`, HttpStatus.Conflict)
 
         const model = await super.getUpdateModel()

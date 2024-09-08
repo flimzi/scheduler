@@ -2,8 +2,8 @@ import check from 'check-types'
 import { EventTypes } from '../interface/definitions.js'
 import { TaskStateMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
 import User from '../models/User.js'
-import events from '../schema/Events.js'
-import users from '../schema/Users.js'
+import dbEvents from '../schema/Events.js'
+import dbUsers from '../schema/Users.js'
 import Service from './Service.js'
 import FirebaseCloudMessage from '../firebase/FirebaseCloudMessage.js'
 
@@ -33,9 +33,9 @@ export default class UserMessageService extends Service {
     constructor() {
         super()
 
-        events.onInsert(this.onEventsInsert.bind(this))
-        events.onUpdate(this.onEventsUpdate.bind(this))
-        events.onDelete(this.onEventsDelete.bind(this))
+        dbEvents.onInsert(this.onEventsInsert.bind(this))
+        dbEvents.onUpdate(this.onEventsUpdate.bind(this))
+        dbEvents.onDelete(this.onEventsDelete.bind(this))
     }
 
     async onEventsInsert({ inserted }) {
@@ -84,7 +84,7 @@ export default class UserMessageService extends Service {
     // this could be in base and the rest in UserTaskMessageService
     // todo not send to giver when not needed
     async sendToUserAndParents(userId, fcm) {
-        const user = await users.getId(userId)
+        const user = await dbUsers.getId(userId)
         this.sendTo(user, fcm)
 
         for (const parent of await user.getParents())

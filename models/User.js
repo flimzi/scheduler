@@ -4,10 +4,10 @@ import crypto from 'crypto'
 import transporter from '../config/mail.js'
 import { Genders } from '../interface/definitions.js'
 import strings from '../resources/strings.en.js'
-import accessTokens, { AccessToken } from '../schema/AccessTokens.js'
+import dbAccessTokens, { AccessToken } from '../schema/AccessTokens.js'
 import { getEvents, getParents, getChildren } from '../schema/functions.js'
-import relationships from '../schema/Relationships.js'
-import users from '../schema/Users.js'
+import dbRelationships from '../schema/Relationships.js'
+import dbUsers from '../schema/Users.js'
 import { ArgumentError } from '../util/errors.js'
 import { sql, sqlInsert, sqlSelect } from '../util/sql.js'
 import Model from './Model.js'
@@ -18,7 +18,7 @@ export default class User extends Model {
         super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
 
-    static getTable() { return users }
+    static getTable() { return dbUsers }
 
     static async authenticate(token) {
         const accessToken = await AccessToken.verify(token)
@@ -28,7 +28,7 @@ export default class User extends Model {
 
         const tokenHash = AccessToken.hash(token)
 
-        if (!await accessTokens.get(accessToken.id, tokenHash))
+        if (!await dbAccessTokens.get(accessToken.id, tokenHash))
             return
 
         const user = User.from(accessToken)
@@ -39,7 +39,7 @@ export default class User extends Model {
     async generateAccessToken() {
         const accessToken = new AccessToken(this)
         const signed = accessToken.sign()
-        await sqlInsert(accessTokens, { user_id: this.id, hash: AccessToken.hash(signed) })
+        await sqlInsert(dbAccessTokens, { user_id: this.id, hash: AccessToken.hash(signed) })
         return signed
     }
 
@@ -47,7 +47,7 @@ export default class User extends Model {
         if (!email || !password)
             return
 
-        const user = await users.getByEmail(email)
+        const user = await dbUsers.getByEmail(email)
 
         if (!user?.verified || !await bcrypt.compare(password, user.password))
             return
@@ -56,12 +56,12 @@ export default class User extends Model {
     }
 
     async logout() {
-        await accessTokens.delete(this.id, this.tokenHash)
+        await dbAccessTokens.delete(this.id, this.tokenHash)
         delete this.tokenHash
     }
 
     async logoutAll() {
-        await accessTokens.deleteForUser(this)
+        await dbAccessTokens.deleteForUser(this)
         delete this.tokenHash
     }
 
@@ -70,7 +70,7 @@ export default class User extends Model {
             return
 
         const verification_token = crypto.randomBytes(20).toString('hex')
-        await this.updateColumn(users.verification_token, verification_token)
+        await this.updateColumn(dbUsers.verification_token, verification_token)
 
         const mailOptions = {
             to: this.email,
@@ -85,7 +85,7 @@ export default class User extends Model {
         if (!token)
             return false
 
-        const user = users.getByVerificationToken(token)
+        const user = dbUsers.getByVerificationToken(token)
 
         if (user === undefined)
             return false
@@ -93,7 +93,7 @@ export default class User extends Model {
         if (user.verified)
             return true
 
-        await sqlUpdate(users, { [users.verified.name]: 1 })`WHERE ${users.verification_token} = ${token}`
+        await sqlUpdate(dbUsers, { [dbUsers.verified.name]: 1 })`WHERE ${dbUsers.verification_token} = ${token}`
         return true
     }
 
@@ -151,30 +151,30 @@ export default class User extends Model {
     }
 
     async getParents(minimal = false, ...relationshipTypes) {
-        return sqlSelect(getParents(this.id, relationshipTypes), minimal ? users.minInfo() : [])()
+        return sqlSelect(getParents(this.id, relationshipTypes), minimal ? dbUsers.minInfo() : [])()
     }
 
     async getChildren(...relationshipTypes) {
-        return sql`SELECT ${users.minInfo()} FROM ${getChildren(this.id, relationshipTypes)}`
+        return sql`SELECT ${dbUsers.minInfo()} FROM ${getChildren(this.id, relationshipTypes)}`
     }
 
     async addParent(parent, relationshipType, transaction) {
         if (parent instanceof User === false)
             throw new ArgumentError()
 
-        return relationships.add(parent, this, relationshipType, transaction)
+        return dbRelationships.add(parent, this, relationshipType, transaction)
     }
 
     async addChild(child, relationshipType, transaction) {
-        return relationships.add(this, child, relationshipType, transaction)
+        return dbRelationships.add(this, child, relationshipType, transaction)
     }
 
     async isParentOf(child, ...relationshipTypes) {
-        return relationships.exists(this, child, ...relationshipTypes)
+        return dbRelationships.exists(this, child, ...relationshipTypes)
     }
 
     async isChildOf(parent, ...relationshipTypes) {
-        return relationships.exists(parent, this, ...relationshipTypes)
+        return dbRelationships.exists(parent, this, ...relationshipTypes)
     }
 
     async getReceivedEvents({ giverId, type, state }) {

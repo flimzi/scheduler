@@ -3,7 +3,7 @@ import { query } from 'express-validator'
 import { EventStates, EventTypes, RelationshipTypes, TaskTypes } from '../interface/definitions.js'
 import { authenticate, getModel, getTargetUser, related } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
-import events from '../schema/Events.js'
+import dbEvents from '../schema/Events.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
 import { HttpStatus, HttpRequest } from '../util/http.js'
 import { ApiRoutes } from './api.js'
@@ -37,7 +37,7 @@ router.post(EventRoutes.events(), related(false, false, RelationshipTypes.Carer,
 const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
 
 router.get(EventRoutes.event(), related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner), asyncHandler(async (req, res) => {
-    const event = await events.getId(req.params.eventId)
+    const event = await dbEvents.getId(req.params.eventId)
     return event ? res.send(event) : res.send(HttpStatus.NotFound)
 }))
 
@@ -69,7 +69,7 @@ router.get(
             state: EventStates.Pending,
         }
 
-        res.send(await events.query(query))
+        res.send(await dbEvents.query(query))
     })
 )
 
@@ -93,7 +93,7 @@ router.get(
             state: EventStates.Missed
         }
 
-        res.send(await events.query(query))
+        res.send(await dbEvents.query(query))
     })
 )
 
