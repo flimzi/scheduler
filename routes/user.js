@@ -2,7 +2,7 @@ import express from 'express'
 import QRCode from 'qrcode'
 import { RelationshipTypes } from '../interface/definitions.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
-import { currentUserPlaceholder, getCurrentUser, related } from '../middleware/auth.js'
+import { currentUserPlaceholder, getCurrentUser, related, self } from '../middleware/auth.js'
 import User from '../models/User.js'
 import { HttpRequest, HttpStatus } from '../util/http.js'
 import { sqlTransaction } from '../util/sql.js'
@@ -46,7 +46,7 @@ router.get(UserRoutes.qr(), related(false, false, RelationshipTypes.Owner), asyn
 
 const getQr = (accessToken, userId = currentUserPlaceholder) => new HttpRequest(ApiRoutes.qr(userId)).bearer(accessToken).fetch()
 
-router.get(UserRoutes.user(), related(true, true, RelationshipTypes.Owner, RelationshipTypes.Carer), asyncHandler(async (req, res) => {
+router.get(UserRoutes.user(), related(true, true, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
     res.json(req.targetUser.getInfo())
 }))
 

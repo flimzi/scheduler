@@ -7,8 +7,8 @@ export class Definition {
         return Object.values(this).filter(v => !except.includes(v))
     }
 
-    static isValid(value) {
-        return this.values().includes(value)
+    static isValid(value, ...except) {
+        return this.values(...except).includes(value)
     }
 }
 

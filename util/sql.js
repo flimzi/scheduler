@@ -21,7 +21,6 @@ mssql.Transaction.prototype.complete = async function() {
     this.completionEvents.dispatchEvent(new CustomEvent('commit'))
 }
 
-// need to test this
 export async function sqlTransaction(operations, parentTransaction) {
     const transaction = parentTransaction ?? createTransaction()
     
@@ -38,6 +37,8 @@ export async function sqlTransaction(operations, parentTransaction) {
 
     return transaction
 }
+
+export const sqlTransactionResult = (operations, parentTransaction) => sqlTransaction(operations, parentTransaction).then(t => t.result)
 
 mssql.Request.prototype.command = ''
 mssql.Request.prototype.paramCount = 0

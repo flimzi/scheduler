@@ -1,6 +1,6 @@
 import express from 'express'
 import { UserRoutes } from './user.js'
-import { authenticate, disallowSelf, getTargetUser, related } from '../middleware/auth.js'
+import { self, related } from '../middleware/auth.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
 import { validate } from '../middleware/validate.js'
 import { body, query } from 'express-validator'
@@ -38,9 +38,7 @@ const getParents = (accessToken, userId, ...types) =>
 router.post(
     RelatedRoutes.parents(),
     validate(Validations.type(RelationshipTypes.Owner), body().isJWT()),
-    authenticate,
-    getTargetUser,
-    disallowSelf,
+    self(false),
     asyncHandler(async (req, res) => {
         const child = await User.authenticate(req.body)
 

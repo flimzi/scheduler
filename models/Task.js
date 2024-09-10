@@ -13,7 +13,7 @@ export default class Task extends Event {
     }
 
     static everyMinute() {
-        return new this.prototype.constructor({
+        return new this({
             info: faker.commerce.productDescription(),
             start_date: new Date().addMilliseconds(60 * 1000),
             duration_seconds: 30,

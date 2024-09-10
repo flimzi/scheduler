@@ -1,11 +1,13 @@
 import { TaskStateMessage, TaskUpdateMessage } from "../interface/ServerMessage.js"
 import User from "../models/User.js"
 import { authActions } from "../routes/auth.js"
+import { drugActions } from "../routes/drug.js"
 import { eventActions } from "../routes/event.js"
 import { fcmActions } from "../routes/fcm.js"
 import { userActions } from '../routes/user.js'
 import UserMessageService from "../services/UserMessageService.js"
 import { assert } from "../util/helpers.js"
+import { HttpStatus } from "../util/http.js"
 
 export default class Client extends User {
     parents = {}
@@ -32,7 +34,11 @@ export default class Client extends User {
             return r.text()
         })
 
-        await fcmActions.putToken(this.accessToken, process.env.FCM_DEFAULT).then(r => assert(r.ok))
+        this.updateToken()
+    }
+
+    async updateToken() {
+        return fcmActions.putToken(this.accessToken, process.env.FCM_DEFAULT).then(r => assert(r.ok))
     }
 
     async logout() {
@@ -45,6 +51,7 @@ export default class Client extends User {
         assert(tokenResponse.ok)
         client.accessToken = await tokenResponse.text()
         this.children[client.id] = client
+        client.updateToken()
         return client
     }
 
@@ -54,16 +61,28 @@ export default class Client extends User {
         this.children.push(client)
     }
 
-    async addTaskFor(client, task) {
-        task.id = await eventActions.postEvents(this.accessToken, client.id, task).then(r => {
+    async addEventFor(client, event) {
+        event.id = await eventActions.postEvents(this.accessToken, client.id, event).then(r => {
             assert(r.ok)
             return r.json()
         })
 
-        client.tasks[task.id] = task
-        const getResponse = await eventActions.getEvent(this.accessToken, client.id, task.id)
+        const getResponse = await eventActions.getEvent(this.accessToken, client.id, event.id)
         assert(getResponse.ok)
         return getResponse.json()
+    }
+
+    async addTaskFor(client, task) {
+        const event = this.addEventFor(client, task)
+        client.tasks[event.id] = event
+
+        return event
+    }
+
+    async addDrugFor(client, drug) {
+        return drugActions.postDrugs(this.accessToken, client.id, drug)
+            .then(r => assert(r.ok) && r)
+            .then(r => r.json())
     }
 
     processFCM(serverMessage) {

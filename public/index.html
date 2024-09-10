@@ -22,7 +22,7 @@
 
     async function handleMessage(payload) {
         console.log('foreground notification', payload)
-        await new Promise(r => setTimeout(r, 2500))
+        await new Promise(r => setTimeout(r, 500))
 
         console.log('sending confirmation')
         fetch(fcmConfirmEndpoint, {

@@ -2,7 +2,7 @@ import express from 'express'
 import { query } from 'express-validator'
 import { EventStates, RelationshipTypes, TaskTypes } from '../interface/definitions.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
-import { authenticate, getModel, related } from '../middleware/auth.js'
+import { authenticate, getModel, related, self } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import Event from '../models/Event.js'
 import dbEvents from '../schema/Events.js'
@@ -29,14 +29,14 @@ export class Parameters {
     static get startAfter() { return 'startAfter' }
 }
 
-router.post(EventRoutes.events(), related(false, false, RelationshipTypes.Carer, RelationshipTypes.Owner), asyncHandler(async (req, res) => {
+router.post(EventRoutes.events(), related(false, false, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
     const { id } = await req.user.addEventFor(req.targetUser, Event.from(req.body))
     res.status(HttpStatus.Created).location(EventRoutes.event(req.targetUser.id, id)).send(id.toString())
 }))
 
 const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
 
-router.get(EventRoutes.event(), related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner), asyncHandler(async (req, res) => {
+router.get(EventRoutes.event(), related(false, false, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
     const event = await dbEvents.getId(req.params.eventId)
     return event ? res.send(event) : res.send(HttpStatus.NotFound)
 }))
@@ -57,7 +57,7 @@ router.get(
         query(Parameters.startBefore).optional().toDate(),
         query(Parameters.startAfter).optional().toDate(),
     ),
-    related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner),
+    related(true, false, RelationshipTypes.Superior),
     asyncHandler(async (req, res) => {
         const query = {
             receiverId: req.targetUser.id,
@@ -83,7 +83,7 @@ const getUpcomingTasks = (accessToken, userId, { giverId, startBefore, startAfte
 router.get(
     EventRoutes.missedTasks(),
     validate(query(Parameters.giverId + '.*').toInt()),
-    related(true, false, RelationshipTypes.Carer, RelationshipTypes.Owner),
+    related(true, false, RelationshipTypes.Superior),
     asyncHandler(async (req, res) => {
         const query = {
             receiverId: req.targetUser.id,

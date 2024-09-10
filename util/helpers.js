@@ -15,6 +15,8 @@ export function isJWT(value) {
 export function assert(actual, expected = true) {
     if (actual !== expected)
         throw new Error(`expected ${actual} to be ${expected}`)
+
+    return true
 }
 
 export function assertType(value, expectedType) {

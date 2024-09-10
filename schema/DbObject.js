@@ -54,6 +54,7 @@ export class DbTable extends DbObject {
     async add(obj, transaction) {
         const inserted = await sqlInsert(this, obj, transaction)
         this.emitInsert(inserted)
+
         return inserted
     }
 

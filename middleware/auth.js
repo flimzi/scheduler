@@ -56,20 +56,23 @@ export const getTargetUser = async (req, res, next) => {
     next()
 }
 
-export const disallowSelf = (req, res, next) => {
-    if (req.targetSelf)
-        return res.send(HttpStatus.Unauthorized)
+// important to note that this is simple and non-branching middleware that can only be chained to guarantee the correctness of every authorization check
+// it cannot be used on its own to provide alternate ways of authorizing a user that does not satisfy some of the requirements
+export const getCurrentAndTargetUser = (req, res, next) => authenticate(req, res, () => getTargetUser(req, res, next))
 
-    next()
+export const self = (onlyOrNever = true) => (req, res, next) => {
+    getCurrentAndTargetUser(req, res, () => {
+        if (req.targetSelf !== onlyOrNever)
+            return res.send(HttpStatus.Unauthorized)
+
+        next()
+    })
 }
 
 export const related = (allowSelf = true, allowChild = true, relationshipTypes) => (req, res, next) => {
-    authenticate(req, res, () => getTargetUser(req, res, () => {
-        // if (req.targetSelf)
-        //     return !allowSelf ? res.send(HttpStatus.Unauthorized) : next()
-    
-        if (!allowSelf)
-            return disallowSelf(req, res, next)
+    getCurrentAndTargetUser(req, res, () => {
+        if (req.targetSelf)
+            return !allowSelf ? res.send(HttpStatus.Unauthorized) : next()
 
         if (!req.user.isParentOf(req.targetUser, relationshipTypes) && !allowChild)
             return res.send(HttpStatus.Unauthorized)
@@ -78,7 +81,7 @@ export const related = (allowSelf = true, allowChild = true, relationshipTypes) 
             return res.send(HttpStatus.Unauthorized)
 
         next()
-    }))
+    })
 }
 
 export const authorize = (...roles) => (req, res, next) => {

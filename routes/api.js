@@ -5,6 +5,7 @@ import { FCMRoutes } from './fcm.js'
 import { RelatedRoutes } from './related.js'
 import { UserRoutes } from './user.js'
 import { VerificationRoutes } from './verification.js'
+import { DrugRoutes } from './drug.js'
 const router = express.Router()
 
 export class ApiRoutes {
@@ -33,6 +34,8 @@ export class ApiRoutes {
     static get fcmToken() { return this.api + FCMRoutes.token }
     static get sendFCM() { return this.api + FCMRoutes.send }
     static get confirmFCM() { return this.api + FCMRoutes.confirm }
+
+    static drugs = userId => this.api + DrugRoutes.drugs(userId)
 }
 
 export default router
