@@ -31,5 +31,5 @@ class Events extends DbTable {
 }
 
 const dbEvents = new Events()
-dbEvents.onUpdate(({ deleted }) => sqlUpdate(dbEvents, { [dbEvents.modified_at.name]: new Date() })`WHERE ${dbEvents.id} = ${deleted.id}`)
+dbEvents.onUpdate(({ deleted }) => sqlUpdate(dbEvents, { [dbEvents.modified_at.dbName]: new Date() })`WHERE ${dbEvents.id} = ${deleted.id}`)
 export default dbEvents

@@ -33,6 +33,7 @@ export class RelationshipTypes extends Definition {
     static Carer = 0
     static Owner = 1
     static Friend = 2
+    static get Superior() { return [this.Carer, this.Owner] }
 }
 
 export class IncomingMessageType extends EventTypes {
@@ -61,4 +62,5 @@ export class EventStates extends Definition {
 export class TaskTypes extends Definition {
     static Task = EventTypes.Task
     static Test = EventTypes.Task + 1
+    static Drug = EventTypes.Task + 2
 }

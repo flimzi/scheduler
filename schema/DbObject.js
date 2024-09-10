@@ -2,8 +2,8 @@ import { TableEventTypes } from "../interface/definitions.js"
 import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
 
 export default class DbObject {
-    constructor(name) {
-        this.name = name
+    constructor(dbName) {
+        this.dbName = dbName
     }
 
     // not sure how to do this yet
@@ -18,8 +18,8 @@ export default class DbObject {
 }
 
 export class DbColumn extends DbObject {
-    constructor(name, validation) {
-        super(name)
+    constructor(dbName, validation) {
+        super(dbName)
         this.validation = validation
     }
 
@@ -79,7 +79,7 @@ export class DbTable extends DbObject {
     }
 
     async updateColumnId({ id }, dbColumn, value, transaction) {
-        await this.updateId({ id }, { [dbColumn.name]: value }, transaction)
+        await this.updateId({ id }, { [dbColumn.dbName]: value }, transaction)
     }
 
     getColumns(...except) {
@@ -94,8 +94,8 @@ export class DbTable extends DbObject {
 }
 
 export class DbFunction extends DbObject {
-    constructor(name, ...values) {
-        super(name)
+    constructor(dbName, ...values) {
+        super(dbName)
         this.values = values
     }
 }

@@ -1,4 +1,4 @@
-import { sqlFirst } from "../util/sql.js"
+import { sqlFirst, sqlTransaction } from "../util/sql.js"
 
 export default class Model {
     constructor(init) {
@@ -45,9 +45,12 @@ export default class Model {
     }
 
     async add(transaction) {
-        return this.getTable()?.add(await this.getUpdateModel(), transaction).cast(this.constructor)
-        
-        // return this.getTable()?.add(await this.getUpdateModel(), transaction).convert(this.constructor)
+        // return sqlTransaction(async t => {
+        //     await this.addAuxiliary(t)
+        //     return this.getTable()?.add(await this.getInsertModel(), t).cast(this.constructor)
+        // }, transaction)
+
+        return this.getTable()?.add(await this.getUpdateModel(), transaction).convert(this.constructor)
     }
 
     async delete(transaction) {

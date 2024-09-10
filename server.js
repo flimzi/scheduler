@@ -12,7 +12,8 @@ import UserMessageService from './services/UserMessageService.js'
 import Client from './tests/Client.mjs'
 import { assert } from './util/helpers.js'
 import Primary from './models/Primary.js'
-
+import dbDrugs from './schema/Drugs.js'
+import DrugTask from './models/DrugTask.js'
 const port = process.env.PORT || 3000
 const userMessageService = new UserMessageService()
 // const taskService = new PollingTaskService()
@@ -20,18 +21,21 @@ const userMessageService = new UserMessageService()
 httpServer.listen(port, async () => {
     console.log(`Server running on port ${port}`)
 
-    const primary = await Client.create(Roles.Primary)
-    await primary.login()
-    const secondary = await primary.createChild(Roles.Secondary)
-    const task = await primary.addTaskFor(secondary, Task.everyMinute())
+    const dt = new DrugTask({ info: 'abcdef', drugs: [ { id: 50 }, { name: "test viagra" } ] })
+    debugger
 
-    console.log(task)
+    // const primary = await Client.create(Roles.Primary)
+    // await primary.login()
+    // const secondary = await primary.createChild(Roles.Secondary)
+    // const task = await primary.addTaskFor(secondary, Task.everyMinute())
 
-    await new Promise(r => setTimeout(r, 2500))
+    // console.log(task)
 
-    task.info = faker.company.catchPhrase()
-    await eventActions.putEvent(primary.accessToken, secondary.id, task.id, task).then(r => assert(r.ok))
+    // await new Promise(r => setTimeout(r, 2500))
 
-    await new Promise(r => setTimeout(r, 2500))
-    console.log(UserMessageService.unconfirmed)
+    // task.info = faker.company.catchPhrase()
+    // await eventActions.putEvent(primary.accessToken, secondary.id, task.id, task).then(r => assert(r.ok))
+
+    // await new Promise(r => setTimeout(r, 2500))
+    // console.log(UserMessageService.unconfirmed)
 })

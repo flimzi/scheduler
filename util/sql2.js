@@ -60,6 +60,7 @@ mssql.Request.prototype.addParam = function(value) {
     if (value === null)
         return 'NULL'
 
+    // these should be implemented in the class
     if (value instanceof DbFunction)
         return `${value.dbName}(${this.addParams(value.values)})` + value.getAlias()
 
@@ -95,11 +96,16 @@ mssql.Request.prototype.parse = function(strings, ...values) {
     return this
 }
 
+// its an okay concept but now you cannot call .then because you dont know if thats the result or still the request
+// which means we probably need to return a object of some kind
+// which could allow to select first from the recordset etc interpret the data
+// and also construct queries like dbDrugs.of(dbDrugs.category, 2).find(name)
 mssql.Request.prototype.sql = function(strings, ...values) {
-    if (strings !== undefined)
-        this.parse(strings, ...values)
-
-    return this.run().then(r => r.recordset)
+    if (strings === undefined)
+        return this.run().then(r => r.recordset)
+        
+    this.parse(strings, ...values)
+    return this.sql.bind(this)
 }
 
 mssql.Request.prototype.insert = function(dbTable, obj) {
@@ -110,7 +116,7 @@ mssql.Request.prototype.insert = function(dbTable, obj) {
         (${new DbObject(Object.keys(obj).join())})
         OUTPUT INSERTED.*
         VALUES (${Object.values(obj)})
-    `.then(rs => rs[0])
+    `().then(rs => rs[0])
 }
 
 // because of this error there cannot be any triggers in the database so they need to be written as a function and
@@ -174,7 +180,7 @@ export const sqlInsert = (table, obj, transaction) => createRequest(transaction)
 export const sqlUpdate = (table, obj, transaction) => createRequest(transaction).update(table, obj)
 export const sqlDelete = (table, transaction) => createRequest(transaction).delete(table)
 export const sqlFirst = (dbTable, dbColumns) => createRequest().selectFirst(dbTable, dbColumns)
-export const sqlExists = (dbTable, transaction) => createRequest(transaction).exists(dbTable)
+export const sqlExists = (dbTable) => createRequest().exists(dbTable)
 export const sqlCount = dbTable => createRequest().count(dbTable)
 export const sqlIds = (dbTable, limit) => createRequest().selectIds(dbTable, limit)
 export const sqlMany = (strings, ...values) => sql(strings, ...values).then(rs => rs.flatMap(r => Object.values(r)))

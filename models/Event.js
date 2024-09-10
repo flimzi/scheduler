@@ -11,7 +11,6 @@ export default class Event extends Model {
         super({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, duration_seconds, interval_seconds })
     }
 
-    // this i think for now should be like in User so validate the input (for example valid type) and return result
     async getUpdateModel() {
         const model = this.clone()
         delete model.id

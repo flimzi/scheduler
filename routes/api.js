@@ -1,17 +1,10 @@
 import express from 'express'
-import { body, query } from 'express-validator'
-import FCM from '../firebase/FirebaseCloudMessage.js'
-import { authenticate } from '../middleware/auth.js'
-import eventStream from '../middleware/eventStream.js'
-import { validate } from "../middleware/validate.js"
-import strings from '../resources/strings.en.js'
-import { asyncHandler } from "../middleware/asyncHandler.js"
 import { AuthRoutes } from './auth.js'
-import { UserRoutes } from './user.js'
-import { RelatedRoutes } from './related.js'
 import { EventRoutes } from './event.js'
-import { VerificationRoutes } from './verification.js'
 import { FCMRoutes } from './fcm.js'
+import { RelatedRoutes } from './related.js'
+import { UserRoutes } from './user.js'
+import { VerificationRoutes } from './verification.js'
 const router = express.Router()
 
 export class ApiRoutes {
@@ -39,7 +32,7 @@ export class ApiRoutes {
 
     static get fcmToken() { return this.api + FCMRoutes.token }
     static get sendFCM() { return this.api + FCMRoutes.send }
-    static get confirmFCM() { return this.api + FCMRoutes.con }
+    static get confirmFCM() { return this.api + FCMRoutes.confirm }
 }
 
 export default router

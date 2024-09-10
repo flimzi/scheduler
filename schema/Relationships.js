@@ -12,12 +12,12 @@ class Relationships extends DbTable {
     child_id = new DbColumn('child_id')
     type = new DbColumn('type')
 
-    async exists(parent, child, ...types) {
+    async exists(parent, child, types) {
         const request = createRequest()
         request.parse`SELECT 1 FROM ${this}`
         request.parse`WHERE ${this.parent_id} = ${parent.id} AND ${this.child_id} = ${child.id}`
 
-        if (types?.length)
+        if (types !== undefined)
             request.parse`AND ${this.type} IN (${types})`
 
         return request.any()

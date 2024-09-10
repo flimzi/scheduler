@@ -93,7 +93,7 @@ export default class User extends Model {
         if (user.verified)
             return true
 
-        await sqlUpdate(dbUsers, { [dbUsers.verified.name]: 1 })`WHERE ${dbUsers.verification_token} = ${token}`
+        await sqlUpdate(dbUsers, { [dbUsers.verified.dbName]: 1 })`WHERE ${dbUsers.verification_token} = ${token}`
         return true
     }
 
@@ -169,12 +169,12 @@ export default class User extends Model {
         return dbRelationships.add(this, child, relationshipType, transaction)
     }
 
-    async isParentOf(child, ...relationshipTypes) {
-        return dbRelationships.exists(this, child, ...relationshipTypes)
+    async isParentOf(child, relationshipTypes) {
+        return dbRelationships.exists(this, child, relationshipTypes)
     }
 
-    async isChildOf(parent, ...relationshipTypes) {
-        return dbRelationships.exists(parent, this, ...relationshipTypes)
+    async isChildOf(parent, relationshipTypes) {
+        return dbRelationships.exists(parent, this, relationshipTypes)
     }
 
     async getReceivedEvents({ giverId, type, state }) {

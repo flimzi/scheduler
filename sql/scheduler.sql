@@ -46,7 +46,22 @@ CREATE TABLE [events] (
 CREATE TABLE [access_tokens] (
 	[user_id] int NOT NULL,
 	[hash] nvarchar(450) NOT NULL
-)
+);
+
+CREATE TABLE [drugs] (
+	[id] int IDENTITY(1, 1) NOT NULL UNIQUE,
+	[userId] int NOT NULL,
+	[category] int NOT NULL,
+	[name] nvarchar(250) NOT NULL,
+	[info] nvarchar(4000) NOT NULL,
+	[unit] int NOT NULL
+);
+
+CREATE TABLE [task_drugs] (
+	[taskId] int NOT NULL,
+	[drugId] int NOT NULL,
+	[amount] int NOT NULL
+);
 
 ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk1] FOREIGN KEY ([parent_id]) REFERENCES [users]([id]);
 ALTER TABLE [relationships] ADD CONSTRAINT [relationships_fk2] FOREIGN KEY ([child_id]) REFERENCES [users]([id]);
@@ -55,6 +70,10 @@ ALTER TABLE [events] ADD CONSTRAINT [events_fk3] FOREIGN KEY ([giver_id]) REFERE
 ALTER TABLE [events] ADD CONSTRAINT [events_fk4] FOREIGN KEY ([receiver_id]) REFERENCES [users]([id]);
 
 ALTER TABLE [access_tokens] ADD CONSTRAINT [access_tokens_fk5] FOREIGN KEY ([user_id]) REFERENCES [users]([id])
+
+ALTER TABLE [drugs] ADD CONSTRAINT [drugs_fk6] FOREIGN KEY ([userId]) REFERENCES [users]([id])
+ALTER TABLE [task_drugs] ADD CONSTRAINT [task_drugs_fk7] FOREIGN KEY ([taskId]) REFERENCES [events]([id])
+ALTER TABLE [task_drugs] ADD CONSTRAINT [task_drugs_fk8] FOREIGN KEY ([drugId]) REFERENCES [drugs]([id])
 
 CREATE INDEX [idx_users_role] ON [users] ([role])
 CREATE INDEX [idx_users_email] ON [users] ([email])

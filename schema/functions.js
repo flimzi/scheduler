@@ -22,8 +22,8 @@ export function getEvents({ giverId, receiverId, type, state, startBefore, start
     )
 }
 
-export function substring(dbColumn, start, end, alias = true) {
-    const as = alias ? ` AS ${dbColumn.name}` : '' 
-    return new DbColumn(`SUBSTRING(${dbColumn.name}, ${start}, ${end})` + as)
+export function substring({ dbName }, start, end, alias = true) {
+    const as = alias ? ` AS ${dbName}` : '' 
+    return new DbColumn(`SUBSTRING(${dbName}, ${start}, ${end})` + as)
 }
 
