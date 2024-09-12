@@ -91,7 +91,7 @@ export class DbTable extends DbObject {
         return this.getColumns()
     }
 
-    static temporary = () => '#temp' + Math.floor(Math.random() * 100000)
+    static temporary = () => new DbTable('#temp' + Math.floor(Math.random() * 100000))
 }
 
 export class DbFunction extends DbObject {

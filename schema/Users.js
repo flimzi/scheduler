@@ -14,7 +14,7 @@ class Users extends DbTable {
     password = new DbColumn('password')
     first_name = new DbColumn('first_name')
     last_name = new DbColumn('last_name')
-    access_token = new DbColumn('access_token')
+    // access_token = new DbColumn('access_token')
     verified = new DbColumn('verified')
     verification_token = new DbColumn('verification_token')
     fcm_token = new DbColumn('fcm_token')
@@ -52,5 +52,5 @@ class Users extends DbTable {
     }
 }
 
-const users = new Users()
-export default users
+const dbUsers = new Users()
+export default dbUsers

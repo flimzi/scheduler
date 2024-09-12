@@ -16,10 +16,7 @@ export function createTransaction(parentTransaction) {
 }
 
 export function createRequest(transaction) {
-    const request = new mssql.Request(transaction ?? pool)
-    transaction && (request.transaction = transaction)
-
-    return request
+    return new mssql.Request(transaction ?? pool)
 } 
 
 mssql.Transaction.prototype.operations = []
@@ -95,7 +92,6 @@ mssql.Request.prototype.logError = function(error) {
 }
 
 mssql.Request.prototype.run = async function(command = this.command, firstRecordset = true) {
-    const fullCommand = this.getFullCommand()
     let result
 
     try {
