@@ -1,31 +1,52 @@
+import { EventEmitter } from 'events'
 import mssql from 'mssql'
 import pool from '../config/db.js'
-import DbObject, { DbFunction } from '../schema/DbObject.js'
+import DbObject, { DbColumn, DbFunction, DbTable } from '../schema/DbObject.js'
+const debug = !!process.env.DEBUG
 
-export const createTransaction = () => new mssql.Transaction(pool)
-export const createRequest = transaction => new mssql.Request(transaction ?? pool)
+let transactionId = 0
 
-mssql.Transaction.prototype.completionEvents = new EventTarget()
-mssql.Transaction.prototype.onCommit = function(listener) { this.completionEvents.addEventListener('commit', listener) }
-mssql.Transaction.prototype.onRollback = function(listener) { this.completionEvents.addEventListener('rollback', listener) }
+export function createTransaction(parentTransaction) {
+    const transaction = new mssql.Transaction(pool)
+    transaction.transactionId = transactionId++
+    transaction.parentTransaction = parentTransaction
+    transaction.operations = []
+
+    return transaction
+}
+
+export function createRequest(transaction) {
+    const request = new mssql.Request(transaction ?? pool)
+    transaction && (request.transaction = transaction)
+
+    return request
+} 
+
+mssql.Transaction.prototype.operations = []
+mssql.Transaction.prototype.completionEvents = new EventEmitter()
+mssql.Transaction.prototype.completionEvents.setMaxListeners(50)
+mssql.Transaction.prototype.onCommit = function(listener) { this.completionEvents.once('commit', listener) }
+mssql.Transaction.prototype.onRollback = function(listener) { this.completionEvents.once('rollback', listener) }
 
 mssql.Transaction.prototype.fail = async function() {
     await this.rollback()
     this.failed = this.completed = true
-    this.completionEvents.dispatchEvent(new CustomEvent('rollback'))
+    this.completionEvents.emit('rollback')
 }
 
 mssql.Transaction.prototype.complete = async function() {
     await this.commit()
     this.completed = true
-    this.completionEvents.dispatchEvent(new CustomEvent('commit'))
+    this.completionEvents.emit('commit')
 }
 
 export async function sqlTransaction(operations, parentTransaction) {
     const transaction = parentTransaction ?? createTransaction()
     
-    if (!parentTransaction)
+    if (!parentTransaction) {
         await transaction.begin()
+        transaction.began = true
+    }
 
     transaction.result = await operations(transaction).catch(async e => {
         await transaction.fail()
@@ -43,15 +64,58 @@ export const sqlTransactionResult = (operations, parentTransaction) => sqlTransa
 mssql.Request.prototype.command = ''
 mssql.Request.prototype.paramCount = 0
 
-mssql.Request.prototype.run = async function(command = this.command) {
-    return this.query(command.removeNewline()).catch(e => {
-        e.command = command
-        throw e
+mssql.Request.prototype.getFullCommand = function() {
+    return this.command.replace(/@(\d+)/g, (match, p1) => {
+        const parameter = this.parameters[p1]
+        
+        if (!parameter)
+            return match
+    
+        if (parameter.type === mssql.DateTime)
+            return `'${parameter.value.toISOString()}'`
+
+        if (parameter.type === mssql.NVarChar)
+            return `'${parameter.value}'`
+
+        return parameter.value
     })
 }
 
+mssql.Request.prototype.logResult = function(result) {
+    console.log('----- SQL -----')
+    this.transaction && console.log('Transaction ' + this.transaction.transactionId, this.transaction)
+    console.log(this.getFullCommand())
+    console.log(result)
+}
+
+mssql.Request.prototype.logError = function(error) {
+    console.error(e)
+    this.transaction && console.log('Transaction ' + this.transaction.transactionId, this.transaction)
+    console.error('query: ' + this.getFullCommand())
+}
+
+mssql.Request.prototype.run = async function(command = this.command, firstRecordset = true) {
+    const fullCommand = this.getFullCommand()
+    let result
+
+    try {
+        const { recordsets } = await this.query(command.removeNewline())
+        result = firstRecordset ? recordsets[0] : recordsets
+    } catch (e) {
+        this.logError(e)
+        throw e
+    }
+
+    debug && this.logResult(result)
+    return result
+}
+
 mssql.Request.prototype.any = function() {
-    return this.run().then(r => r.recordset.length)
+    return this.run().then(r => r.length)
+}
+
+mssql.Request.prototype.first = function() {
+    return this.run().then(r => r[0])
 }
 
 mssql.Request.prototype.addParam = function(value) {
@@ -100,18 +164,37 @@ mssql.Request.prototype.sql = function(strings, ...values) {
     if (strings !== undefined)
         this.parse(strings, ...values)
 
-    return this.run().then(r => r.recordset)
+    return this.run()
 }
 
 mssql.Request.prototype.insert = function(dbTable, obj) {
     Object.deleteUndefinedProperties(obj)
 
-    return this.sql`
+    this.parse`
         INSERT INTO ${dbTable}
         (${new DbObject(Object.keys(obj).join())})
         OUTPUT INSERTED.*
         VALUES (${Object.values(obj)})
-    `.then(rs => rs[0])
+    `
+
+    return this.first()
+}
+
+// this can also be done like
+// SELECT (dbTable.getColumns (except id)) with toChange substituted AS columnName
+mssql.Request.prototype.copy = function(dbTable, toChange) {
+    const temp = DbTable.temporary()
+    this.parse`SELECT * INTO ${temp} FROM ${dbTable}`
+
+    return (strings, ...values) => {
+        this.parse(strings, ...values)
+        this.parse`ALTER TABLE ${temp} DROP COLUMN IF EXISTS ${DbColumn.id}`
+        this.parse`UPDATE ${temp} SET ${toChange}`
+        this.parse`INSERT INTO ${dbTable} OUTPUT INSERTED.*`
+        this.parse`SELECT * FROM ${temp}`
+        this.parse`DROP TABLE ${temp}`
+        return this.run()
+    }
 }
 
 // because of this error there cannot be any triggers in the database so they need to be written as a function and
@@ -162,7 +245,7 @@ mssql.Request.prototype.count = function(dbTable) {
 
 mssql.Request.prototype.selectIds = function(dbTable, limit) {
     return (strings, ...values) =>
-        this.select(dbTable, [new DbObject('id')], limit)(strings, ...values)
+        this.select(dbTable, [DbColumn.id], limit)(strings, ...values)
             .then(rs => rs.flatMap(r => r.id))
 }
 
@@ -179,3 +262,4 @@ export const sqlExists = (dbTable, transaction) => createRequest(transaction).ex
 export const sqlCount = dbTable => createRequest().count(dbTable)
 export const sqlIds = (dbTable, limit) => createRequest().selectIds(dbTable, limit)
 export const sqlMany = (strings, ...values) => sql(strings, ...values).then(rs => rs.flatMap(r => Object.values(r)))
+export const sqlCopy = (dbTable, toChange, transaction) => createRequest(transaction).copy(dbTable, toChange)

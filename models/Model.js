@@ -66,6 +66,15 @@ export default class Model {
     async upload() {
         return this.update(await this.getUpdateModel())
     }
+
+    async getDownloadModel() {
+        return this
+    }
+
+    static async getId(id) {
+        const model = await this.getTable().getId(id).convert(this.getType.bind(this))
+        return model?.getDownloadModel()
+    }
 }
 
 Object.defineProperty(Object.prototype, Model.cast.name, {

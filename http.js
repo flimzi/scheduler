@@ -1,6 +1,5 @@
 import express from 'express'
 import http from 'http'
-import mssql from 'mssql'
 
 import authRoutes from './routes/auth.js'
 import eventRoutes from './routes/event.js'
@@ -12,6 +11,7 @@ import fcmRoutes from './routes/fcm.js'
 import drugRoutes from './routes/drug.js'
 import { ArgumentError } from './util/errors.js'
 import { HttpStatus } from './util/http.js'
+import criticalHandler from './util/criticalHandler.js'
 
 const app = express()
 app.use(express.json())
@@ -35,9 +35,6 @@ app.use((err, req, res, next) => {
         res.send(err.message)
         return
     }
-
-    if (err instanceof mssql.RequestError)
-        console.error('query: ' + err.command)
 
     res.send(HttpStatus.ServerError)
 })

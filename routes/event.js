@@ -54,21 +54,16 @@ router.get(
     EventRoutes.upcomingTasks(),
     validate(
         query(Parameters.giverId + '.*').toInt(),
-        query(Parameters.startBefore).optional().toDate(),
-        query(Parameters.startAfter).optional().toDate(),
+        query(Parameters.startBefore).optional().toDate()
     ),
     related(true, false, RelationshipTypes.Superior),
     asyncHandler(async (req, res) => {
-        const query = {
+        res.send(await dbEvents.query({
             receiverId: req.targetUser.id,
             giverId: req.query[Parameters.giverId],
             startBefore: req.query[Parameters.startBefore],
             startAfter: req.query[Parameters.startAfter],
-            type: TaskTypes.values(),
-            state: EventStates.Pending,
-        }
-
-        res.send(await dbEvents.query(query))
+        }))
     })
 )
 
@@ -77,7 +72,6 @@ const getUpcomingTasks = (accessToken, userId, { giverId, startBefore, startAfte
         .bearer(accessToken)
         .query(Parameters.giverId, giverId)
         .query(Parameters.startBefore, startBefore)
-        .query(Parameters.startAfter, startAfter)
         .fetch()
 
 router.get(
@@ -85,14 +79,10 @@ router.get(
     validate(query(Parameters.giverId + '.*').toInt()),
     related(true, false, RelationshipTypes.Superior),
     asyncHandler(async (req, res) => {
-        const query = {
+        res.send(await dbEvents.getMissedTasks({
             receiverId: req.targetUser.id,
-            giverId: req.query[Parameters.giverId],
-            type: TaskTypes.values(),
-            state: EventStates.Missed
-        }
-
-        res.send(await dbEvents.query(query))
+            giverId: req.query[Parameters.giverId]
+        }))
     })
 )
 

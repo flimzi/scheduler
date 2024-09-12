@@ -1,26 +1,5 @@
 import { IncomingMessage } from 'http'
 
-Object.cast = function cast(obj, type) {
-    if (obj === undefined)
-        return undefined
-
-    const casted = new type(obj)
-    return Object.isFunction(casted) ? new casted(obj) : casted
-}
-
-Object.defineProperty(Object.prototype, Object.cast.name, {
-    value: function(type) {
-        return Object.cast(this, type)
-    },
-    enumerable: false,
-    configurable: true,
-    writable: true,
-})  
-
-Object.clone = function(obj) {
-    return new obj.constructor(obj)
-}
-
 Object.deleteUndefinedProperties = function(obj) {
     for (const key in obj)
         if (obj[key] === undefined)
@@ -59,10 +38,6 @@ Object.isType = function(obj, type) {
     return false
 }
 
-Promise.prototype.cast = async function(type) {
-    return this.then(result => Object.cast(result, type))
-}
-
 String.prototype.toLettersOnly = function() {
     return this.replace(/[^\p{L}]/gu, '')
 }
@@ -84,7 +59,7 @@ Array.prototype.random = function() {
 }
 
 Array.range = function(length) {
-    return Array(length).keys().toArray()
+    return [...Array(length).keys()]
 }
 
 Date.max = () => new Date(8640000000000000)
@@ -92,6 +67,10 @@ Date.min = () => new Date(-8640000000000000)
 
 Date.prototype.addMilliseconds = function(milliseconds) {
     return new Date(this.getTime() + milliseconds)
+}
+
+Date.prototype.addSeconds = function(seconds) {
+    return this.addMilliseconds(seconds * 1000)
 }
 
 IncomingMessage.prototype.baseUrl = function(route = '') {

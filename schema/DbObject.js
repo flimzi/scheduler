@@ -1,3 +1,4 @@
+import { EventEmitter } from "events"
 import { TableEventTypes } from "../interface/definitions.js"
 import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
 
@@ -18,38 +19,37 @@ export default class DbObject {
 }
 
 export class DbColumn extends DbObject {
-    constructor(dbName, validation) {
+    constructor(dbName, { computed, validation } = {}) {
         super(dbName)
-        this.validation = validation
+        this.options = { computed, validation }
     }
 
     static id = new DbColumn('id')
 }
 
 export class DbTable extends DbObject {
-    #events = new EventTarget()
+    #events = new EventEmitter()
 
-    on(tableEventType, listener) {
-        this.#events.addEventListener(tableEventType, ({ detail }) => listener(detail))
+    constructor(name) {
+        super(name)
+        this.#events.setMaxListeners(50)
     }
 
-    emit(tableEventType, detail, transaction) {
-        if (transaction) {
-            transaction.onCommit(_ => this.emit(tableEventType, detail))
-            return
-        }
+    emit(tableEventType, detail) {
+        // if (transaction) {
+        //     transaction.onCommit(_ => this.emit(tableEventType, detail))
+        //     return
+        // }
 
-        this.#events.dispatchEvent(new CustomEvent(tableEventType, { detail }))
-        this.#events.dispatchEvent(new CustomEvent(TableEventTypes.Change, { detail: { tableEventType, ...detail } }))
+        this.#events.emit(tableEventType, detail)
+        this.#events.emit(TableEventTypes.Change, { tableEventType, ...detail })
     }
 
-    emitInsert = inserted => this.emit(TableEventTypes.Insert, { inserted })
-    emitDelete = deleted => this.emit(TableEventTypes.Delete, { deleted })
-    emitUpdate = (deleted, inserted) => this.emit(TableEventTypes.Update, { deleted, inserted })
-    onInsert = listener => this.on(TableEventTypes.Insert, listener)
-    onDelete = listener => this.on(TableEventTypes.Delete, listener)
-    onUpdate = listener => this.on(TableEventTypes.Update, listener)
-    onChange = listener => this.on(TableEventTypes.Change, listener)
+    emitInsert = inserted => this.#events.emit(TableEventTypes.Insert, { inserted })
+    emitDelete = deleted => this.#events.emit(TableEventTypes.Delete, { deleted })
+    emitUpdate = (deleted, inserted) => this.#events.emit(TableEventTypes.Update, { deleted, inserted })
+    on = this.#events.on
+    once = this.#events.once
 
     async add(obj, transaction) {
         const inserted = await sqlInsert(this, obj, transaction)
@@ -91,7 +91,7 @@ export class DbTable extends DbObject {
         return this.getColumns()
     }
 
-    static deleted = new DbTable('@DeletedRows')
+    static temporary = () => '#temp' + Math.floor(Math.random() * 100000)
 }
 
 export class DbFunction extends DbObject {

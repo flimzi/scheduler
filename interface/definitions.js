@@ -64,3 +64,13 @@ export class TaskTypes extends Definition {
     static Test = EventTypes.Task + 1
     static Drug = EventTypes.Task + 2
 }
+
+export class DrugCategories extends Definition {
+    static Default = 1
+    static PainManagement = 2
+}
+
+export class Units extends Definition {
+    static ml = 1
+    static mg = 2
+}

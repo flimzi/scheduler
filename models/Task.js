@@ -1,23 +1,30 @@
 import { fakerPL as faker } from '@faker-js/faker'
 import { EventTypes, TaskTypes } from "../interface/definitions.js";
 import Event from "./Event.js";
+import dbEvents from '../schema/Events.js';
+import { sqlTransaction } from '../util/sql.js';
 
 // might need to add different task types later but that shouldnt be aproblem
 export default class Task extends Event {
     type = EventTypes.Task
 
-    async getUpdateModel() {
-        const model = await super.getUpdateModel()
+    async reschedule() {
+        if (!this.interval_seconds || new Date() < this.end_date)
+            return
 
-        return model
+        const intervals = Math.ceil((new Date() - this.end_date) / (this.interval_seconds * 1000))
+        this.start_date = this.end_date.addSeconds(this.interval_seconds * intervals)
+        this.previous_id = this.id
+
+        return super.add()
     }
 
-    static everyMinute() {
+    static everySeconds(seconds = 60, duration = 30) {
         return new this({
-            info: faker.commerce.productDescription(),
-            start_date: new Date().addMilliseconds(60 * 1000),
-            duration_seconds: 30,
-            interval_seconds: 60,
+            info: faker.lorem.text(),
+            start_date: new Date().addSeconds(seconds),
+            duration_seconds: duration,
+            interval_seconds: seconds,
         })
     }
 }

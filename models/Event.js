@@ -7,14 +7,15 @@ export default class Event extends Model {
     
     static getTable() { return dbEvents }
     
-    constructor({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, duration_seconds, interval_seconds }) {
-        super({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, duration_seconds, interval_seconds })
+    constructor({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, end_date, duration_seconds, interval_seconds, previous_id }) {
+        super({ id, type, state, giver_id, receiver_id, info, modified_at, start_date, end_date, duration_seconds, interval_seconds, previous_id })
     }
 
     async getUpdateModel() {
         const model = this.clone()
         delete model.id
         delete model.modified_at
+        delete model.end_date
 
         return model
     }

@@ -10,7 +10,7 @@ export function getChildren(userId, ...relationshipTypes) {
     return new DbFunction('GetChildren', userId, joinInts(relationshipTypes) ?? null)
 }
 
-export function getEvents({ giverId, receiverId, type, state, startBefore, startAfter }) { 
+export function getEvents({ giverId, receiverId, type, state, startBefore, startAfter, endBefore, endAfter }) { 
     return new DbFunction(
         'GetEvents', 
         joinInts(giverId) ?? null, 
@@ -18,7 +18,9 @@ export function getEvents({ giverId, receiverId, type, state, startBefore, start
         joinInts(type) ?? null, 
         joinInts(state) ?? null, 
         check.date(startBefore) ? startBefore : null, 
-        check.date(startAfter) ? startAfter : null
+        check.date(startAfter) ? startAfter : null,
+        check.date(endBefore) ? endBefore : null, 
+        check.date(endAfter) ? endAfter : null
     )
 }
 

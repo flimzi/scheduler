@@ -43,12 +43,15 @@ export class HttpRequest {
     async fetch(method) {
         const init = { ...this.init, method }
         const url = this.url.toString()
+        const startTime = Date.now()
         const response = await fetch(url, init)
         const text = await response.clone().text()
 
+        console.log('----- HTTP -----')
         console.log({ url, init, method })
         console.log(response)
-        console.log(text)
+        console.log('Text ' + text)
+        console.log('Time ' + (Date.now() - startTime))
 
         return response
     }

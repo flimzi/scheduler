@@ -32,7 +32,9 @@ CREATE OR ALTER FUNCTION GetEvents(
 	@Types NVARCHAR(20) = NULL,
 	@States NVARCHAR(20) = NULL,
 	@StartBefore DATETIME = NULL,
-	@StartAfter DATETIME = NULL
+	@StartAfter DATETIME = NULL,
+	@EndBefore DATETIME = NULL,
+	@EndAfter DATETIME = NULL
 )
 RETURNS TABLE
 AS RETURN
@@ -61,5 +63,13 @@ AS RETURN
 	AND (
 		@StartAfter IS NULL OR
 		[start_date] >= @StartAfter
+	)
+	AND (
+		@EndBefore IS NULL OR
+		[end_date] <= @EndBefore
+	)
+	AND (
+		@EndAfter IS NULL OR
+		[end_date] >= @EndAfter
 	)
 )

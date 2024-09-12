@@ -1,41 +1,40 @@
 import check from 'check-types'
-import { EventTypes } from '../interface/definitions.js'
+import { EventEmitter } from 'events'
+import FirebaseCloudMessage from '../firebase/FirebaseCloudMessage.js'
+import { EventTypes, TableEventTypes } from '../interface/definitions.js'
 import { TaskStateMessage, TaskUpdateMessage } from '../interface/ServerMessage.js'
 import User from '../models/User.js'
 import dbEvents from '../schema/Events.js'
 import dbUsers from '../schema/Users.js'
 import Service from './Service.js'
-import FirebaseCloudMessage from '../firebase/FirebaseCloudMessage.js'
 
 export default class UserMessageService extends Service {
     static {
-        this.confirmationEvents = new EventTarget()
+        this.confirmationEvents = new EventEmitter()
+        this.confirmationEvents.setMaxListeners(50)
         this.unconfirmed = 0
 
         this.confirm = message => {
             if (!check.object(message.data))
                 return
 
-            const detail = FirebaseCloudMessage.unstringify(message.data)
-            this.confirmationEvents.dispatchEvent(new CustomEvent(message.messageId, { detail }))
+            const data = FirebaseCloudMessage.unstringify(message.data)
+            this.confirmationEvents.emit(message.messageId, data)
             
             if (check.integer(detail.userId))
-                this.confirmationEvents.dispatchEvent(new CustomEvent(detail.userId, { detail }))
+                this.confirmationEvents.emit(detail.userId, data)
         }
 
-        this.onConfirmed = (messageOrUserId, listener) =>
-            this.confirmationEvents.addEventListener(messageOrUserId, ({ detail }) => {
-                listener(detail)
-                this.confirmationEvents.removeEventListener(messageOrUserId, listener)
-            })
+        this.onConfirmed = (messageId, listener) => this.confirmationEvents.once(messageId, listener)
+        this.onUserConfirmed = (userId, listener) => this.confirmationEvents.on(userId, listener)
     }
 
     constructor() {
         super()
 
-        dbEvents.onInsert(this.onEventsInsert.bind(this))
-        dbEvents.onUpdate(this.onEventsUpdate.bind(this))
-        dbEvents.onDelete(this.onEventsDelete.bind(this))
+        dbEvents.on(TableEventTypes.Insert, this.onEventsInsert.bind(this))
+        dbEvents.on(TableEventTypes.Update, this.onEventsUpdate.bind(this))
+        dbEvents.on(TableEventTypes.Delete, this.onEventsDelete.bind(this))
     }
 
     async onEventsInsert({ inserted }) {
@@ -76,7 +75,9 @@ export default class UserMessageService extends Service {
             return
 
         if (!!process.env.DEBUG)
-            UserMessageService.onConfirmed(messageId, _ => UserMessageService.unconfirmed--)
+            UserMessageService.onConfirmed(messageId, _ => {
+                UserMessageService.unconfirmed--
+            })
 
         return messageId
     }

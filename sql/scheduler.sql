@@ -40,6 +40,7 @@ CREATE TABLE [events] (
 	[duration_seconds] int,
 	[end_date] AS DATEADD(SECOND, [duration_seconds], [start_date]) PERSISTED,
 	[interval_seconds] int,
+	[previous_id] int,
 	PRIMARY KEY ([id])
 );
 

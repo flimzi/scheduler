@@ -1,4 +1,7 @@
 import { TaskStateMessage, TaskUpdateMessage } from "../interface/ServerMessage.js"
+import Drug from '../models/Drug.js'
+import DrugTask from '../models/DrugTask.js'
+import TaskDrug from '../models/TaskDrug.js'
 import User from "../models/User.js"
 import { authActions } from "../routes/auth.js"
 import { drugActions } from "../routes/drug.js"
@@ -7,7 +10,6 @@ import { fcmActions } from "../routes/fcm.js"
 import { userActions } from '../routes/user.js'
 import UserMessageService from "../services/UserMessageService.js"
 import { assert } from "../util/helpers.js"
-import { HttpStatus } from "../util/http.js"
 
 export default class Client extends User {
     parents = {}
@@ -24,7 +26,7 @@ export default class Client extends User {
 
         const client = user.cast(Client)
         client.owner = parent
-        UserMessageService.onConfirmed(user.id, client.processFCM.bind(client))
+        UserMessageService.onUserConfirmed(user.id, client.processFCM.bind(client))
         return client
     }
 
@@ -83,6 +85,17 @@ export default class Client extends User {
         return drugActions.postDrugs(this.accessToken, client.id, drug)
             .then(r => assert(r.ok) && r)
             .then(r => r.json())
+    }
+
+    async addDrugTaskFor(client, drugTask) {
+        if (!drugTask) {
+            const drug1 = await this.addDrugFor(client, Drug.fake(client.id))
+            const drug2 = await this.addDrugFor(client, Drug.fake(client.id))
+            const taskDrugs = [ new TaskDrug({ drugId: drug1.id, amount: 200 }), new TaskDrug({ drugId: drug2.id, amount: 1000 }) ]
+            drugTask = DrugTask.everySeconds(10).clone({ drugs: taskDrugs })
+        }
+
+        return await this.addTaskFor(client, drugTask)
     }
 
     processFCM(serverMessage) {
