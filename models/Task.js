@@ -1,13 +1,12 @@
-import { fakerPL as faker } from '@faker-js/faker'
+import { fakerPL as faker } from '@faker-js/faker';
 import { EventTypes, TaskTypes } from "../interface/definitions.js";
 import Event from "./Event.js";
-import dbEvents from '../schema/Events.js';
-import { sqlTransaction } from '../util/sql.js';
 
 // might need to add different task types later but that shouldnt be aproblem
 export default class Task extends Event {
     type = EventTypes.Task
 
+    // maybe should be a sql query
     async reschedule() {
         if (!this.interval_seconds || new Date() < this.end_date)
             return

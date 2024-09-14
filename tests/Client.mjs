@@ -27,7 +27,7 @@ export default class Client extends User {
         const client = user.cast(Client)
         client.owner = parent
         UserMessageService.onUserConfirmed(user.id, client.processFCM.bind(client))
-        return client
+        return client.login()
     }
 
     async login() {
@@ -37,6 +37,7 @@ export default class Client extends User {
         })
 
         this.updateToken()
+        return this
     }
 
     async updateToken() {

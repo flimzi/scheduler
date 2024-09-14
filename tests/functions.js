@@ -8,7 +8,6 @@ import { assert } from "../util/helpers.js"
 
 export async function userScenario1() {
     const primary = await Client.create(Roles.Primary)
-    await primary.login()
     const secondary = await primary.createChild(Roles.Secondary)
     const task = await primary.addTaskFor(secondary, Task.everySeconds(10, 5))
 

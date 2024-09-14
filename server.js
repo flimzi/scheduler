@@ -9,6 +9,8 @@ import './ws.js'
 import sql, { SqlBuilder } from './sql/SqlBuilder.js'
 import dbUsers from './schema/Users.js'
 import { sqlCopy, sqlCount, sqlExists, sqlSelect, sqlSelectId } from './sql/helpers.js'
+import Client from './tests/Client.mjs'
+import { Roles } from './interface/definitions.js'
 
 const port = process.env.PORT || 3000
 const userMessageService = new UserMessageService()
@@ -26,6 +28,9 @@ httpServer.listen(port, async () => {
 
     // let x = await sqlSelect(dbUsers, dbUsers.first_name, 10)(r => r[0])
     // let y = await sqlCopy(dbUsers, { email: null })`WHERE ${dbUsers.id} = ${16}`(r => console.log(r))
-    let z = await sqlSelectId(dbUsers)()
-    debugger
+    // let z = await sqlSelectId(dbUsers)()
+    // debugger
 })
+
+// Olimpia56@hotmail.com
+// G87YtQGAzMDxPRe
