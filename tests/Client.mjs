@@ -1,3 +1,4 @@
+import { Roles } from "../interface/definitions.js"
 import { TaskStateMessage, TaskUpdateMessage } from "../interface/ServerMessage.js"
 import Drug from '../models/Drug.js'
 import DrugTask from '../models/DrugTask.js'
@@ -27,7 +28,11 @@ export default class Client extends User {
         const client = user.cast(Client)
         client.owner = parent
         UserMessageService.onUserConfirmed(user.id, client.processFCM.bind(client))
-        return client.login()
+        return client
+    }
+
+    static async createPrimary(parent) {
+        return (await this.create(Roles.Primary, parent)).login()
     }
 
     async login() {
@@ -58,6 +63,10 @@ export default class Client extends User {
         return client
     }
 
+    async createSecondaryChild() {
+        return this.createChild(Roles.Secondary)
+    }
+
     async addChild(client, relationshipType) {
         await relatedActions.postParents(this.accessToken, client.id, client.accessToken, relationshipType).then(r => assert(r.ok))
         client.parents[this.id] = this
@@ -70,9 +79,9 @@ export default class Client extends User {
             return r.json()
         })
 
-        const getResponse = await eventActions.getEvent(this.accessToken, client.id, event.id)
-        assert(getResponse.ok)
-        return getResponse.json()
+        const response = await eventActions.getEvent(this.accessToken, client.id, event.id)
+        assert(response.ok)
+        return response.json()
     }
 
     async addTaskFor(client, task) {
@@ -93,10 +102,14 @@ export default class Client extends User {
             const drug1 = await this.addDrugFor(client, Drug.fake(client.id))
             const drug2 = await this.addDrugFor(client, Drug.fake(client.id))
             const taskDrugs = [ new TaskDrug({ drugId: drug1.id, amount: 200 }), new TaskDrug({ drugId: drug2.id, amount: 1000 }) ]
-            drugTask = DrugTask.everySeconds(10).clone({ drugs: taskDrugs })
+            drugTask = DrugTask.everySeconds(10).clone({ taskDrugs })
         }
 
-        return await this.addTaskFor(client, drugTask)
+        return this.addTaskFor(client, drugTask)
+    }
+
+    async getDrugs(accessToken = this.accessToken, { categories, name, lastId } = {}) {
+        return drugActions.getDrugs(accessToken, this.id, { categories, name, lastId }).then(r => r.json())
     }
 
     processFCM(serverMessage) {

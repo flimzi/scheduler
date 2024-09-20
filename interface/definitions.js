@@ -66,7 +66,7 @@ export class TaskTypes extends Definition {
 }
 
 export class DrugCategories extends Definition {
-    static Default = 1
+    static None = 1
     static PainManagement = 2
 }
 

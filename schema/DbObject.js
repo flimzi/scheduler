@@ -1,6 +1,7 @@
 import { EventEmitter } from "events"
 import { TableEventTypes } from "../interface/definitions.js"
-import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
+// import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
+import { first, sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../sql/helpers.js"
 
 export default class DbObject {
     constructor(dbName) {
@@ -62,19 +63,19 @@ export class DbTable extends DbObject {
         if (id === undefined)
             return undefined
 
-        return sqlFirst(this)`WHERE ${this.id} = ${id}`
+        return sqlFirst(this)`WHERE ${this.id} = ${id}`()
     }
 
     // database events are only emitted in this class
     // but it could instead be sqlDelete(dbTable) -> dbTable.emit(deletedArray)
     async deleteId({ id }, transaction) {
-        const deleted = (await sqlDelete(this, transaction)`WHERE ${this.id} = ${id}`)[0]
+        const deleted = await sqlDelete(this, transaction)`WHERE ${this.id} = ${id}`(first)
         deleted && this.emitDelete(deleted)
         return deleted
     }
 
     async updateId({ id }, updates, transaction) {
-        const deleted = (await sqlUpdate(this, updates, transaction)`WHERE ${this.id} = ${id}`)[0]
+        const deleted = await sqlUpdate(this, updates, transaction)`WHERE ${this.id} = ${id}`(first)
         deleted && this.emitUpdate(deleted, updates)
         return deleted
     }

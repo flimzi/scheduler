@@ -5,13 +5,13 @@ export const first = recordset => recordset[0]
 export const any = recordset => recordset.any()
 export const get = column => recordset => first(recordset)[column]
 
-export function sqlInsert(dbTable, obj) {
+export async function sqlInsert(dbTable, obj) {
     return sql`
         INSERT INTO ${dbTable}
         (${new DbObject(Object.keys(obj).join())})
         OUTPUT INSERTED.*
         VALUES (${Object.values(obj)})
-    `
+    `(first)
 }
 
 export function sqlCopy(dbTable, toChange) {
@@ -42,13 +42,22 @@ export function sqlUpdate(dbTable, toChange) {
 function getSelectBuilder(dbTable, dbColumns, limit, into) {
     const builder = new SqlBuilder().parse`SELECT`
     limit && builder.parse`TOP ${new DbObject(limit)}`
+    builder.parse`${dbColumns ?? new DbObject('*')}`
     into && builder.parse`INTO ${into}`
 
-    return builder.parse`${dbColumns ?? new DbObject('*')} FROM ${dbTable}`
+    builder.parse`FROM ${dbTable}`
+    return builder
 }
 
 export function sqlSelect(dbTable, dbColumns, limit) {
     const builder = getSelectBuilder(dbTable, dbColumns, limit)
+    return builder.query.bind(builder)
+}
+
+export function sqlFirst(dbTable, dbColumns) {
+    const builder = getSelectBuilder(dbTable, dbColumns, 1)
+    builder.transformation = first
+
     return builder.query.bind(builder)
 }
 
@@ -72,4 +81,3 @@ export function sqlSelectId(dbTable, limit) {
 
     return builder.query.bind(builder)
 }
-

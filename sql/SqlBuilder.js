@@ -22,7 +22,7 @@ export class SqlBuilder {
             return SqlBuilder.NULL
     
         if (value instanceof DbFunction)
-            return `${value.dbName}(${this.inputMany(value.values)})`
+            return `${value.dbName}(${this.input(value.values)})`
     
         if (value instanceof DbObject)
             return value.dbName

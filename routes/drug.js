@@ -13,6 +13,7 @@ const router = express.Router()
 
 export class DrugRoutes {
     static drugs = userId => UserRoutes.user(userId) + '/drugs'
+    static drug = (userId, drugId = ':drugId') => UserRoutes.user(userId) + '/drug/' + drugId
 
     // these parameters could be replaced by DbColumn
     static Parameters = class {
@@ -30,9 +31,7 @@ router.get(
         query(DrugRoutes.Parameters.lastId).optional().toInt()
     ),
     related(true, false, RelationshipTypes.Superior),
-    asyncHandler(async (req, res) => {
-        res.send(await dbDrugs.find(req.userId))
-    })
+    asyncHandler(async (req, res) => res.send(await dbDrugs.find(req.user.id)))
 )
 
 const getDrugs = (accessToken, userId, { categories, name, lastId } = {}) =>
@@ -49,5 +48,13 @@ router.post(DrugRoutes.drugs(), related(false, false, RelationshipTypes.Superior
 
 const postDrugs = (accessToken, userId, drug) => new HttpRequest(ApiRoutes.drugs(userId)).bearer(accessToken).json(drug).post()
 
-export const drugActions = { getDrugs, postDrugs }
+router.get(
+    DrugRoutes.drug(), 
+    related(true, false, RelationshipTypes.Superior), 
+    asyncHandler(async (req, res) => res.send(Drug.getId(req.params.drugId) ?? HttpStatus.NotFound))
+)
+
+const getDrug = (accessToken, userId, drugId) => new HttpRequest(ApiRoutes.drug(userId, drugId)).bearer(accessToken).fetch()
+
+export const drugActions = { getDrugs, postDrugs, getDrug }
 export default router

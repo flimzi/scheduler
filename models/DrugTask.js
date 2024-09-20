@@ -2,7 +2,11 @@ import check from 'check-types';
 import { TaskTypes } from "../interface/definitions.js";
 import dbTaskDrugs from '../schema/TaskDrugs.js';
 import { ArgumentError } from '../util/errors.js';
-import { sqlCopy, sqlDelete, sqlSelect, sqlTransaction, sqlTransactionResult } from '../util/sql.js';
+// import { sqlCopy, sqlDelete, sqlTransaction, sqlTransactionResult } from '../util/sql.js';
+import sqlTransaction from '../sql/SqlTransaction.js';
+import { sqlCopy, sqlDelete } from '../sql/helpers.js';
+import { sqlSelect } from '../sql/helpers.js';
+import dbDrugs from '../schema/Drugs.js'
 import Task from './Task.js';
 import TaskDrug from './TaskDrug.js';
 
@@ -11,50 +15,59 @@ export default class DrugTask extends Task {
 
     constructor(init) {
         super(init)
-        this.drugIds = init.drugIds?.map(d => new TaskDrug(d))
+
+        // taskDrugs can be undefined for rescheduling optimization of copying table records
+        this.taskDrugs = init.taskDrugs?.map(td => new TaskDrug(td)) ?? []
     }
 
     async add(transaction) {
-        const drugIds = this.drugIds
-        delete this.drugIds
+        const taskDrugs = this.taskDrugs
 
-        return sqlTransactionResult(async t => {
+        return sqlTransaction(async t => {
             const task = await super.add(t)
-            await task.setDrugs(drugIds, t)
+            await task.setDrugs(taskDrugs, t)
 
             return task
         }, transaction)
     }
 
-    async getDownloadModel() {
-        // this needs to be drugIds if the upload and download models are to be the same
-        // which they do not have to be and this could return the entire drug objects for speed 
-        // but the client would need to have a representation for each of the two models
-        // but it is going to suffice for now
-        // also i dont think there is a need for manipulating nested models
-        const model = await super.getDownloadModel()
-        model.drugIds = await sqlSelect(dbTaskDrugs)`WHERE ${dbTaskDrugs.taskId} = ${this.id}`
+    async getUpdateModel() {
+        const model = await super.getUpdateModel()
+        delete model.taskDrugs
 
         return model
     }
 
-    // async getDrugs() {
+    async getDownloadModel() {
+        const model = await super.getDownloadModel()
+        model.taskDrugs = await model.getDrugs()
 
-    // }
+        return model
+    }
 
-    async setDrugs(drugs, transaction) {
+    async getDrugs(full) {
+        let taskDrugs = sqlSelect(dbTaskDrugs)
+
+        if (full)
+            taskDrugs = taskDrugs`JOIN ${dbDrugs} ON ${dbTaskDrugs}.${dbTaskDrugs.drugId} = ${dbDrugs}.${dbDrugs.id}`
+
+        return taskDrugs`WHERE ${dbTaskDrugs.taskId} = ${this.id}`()
+    }
+
+    async setDrugs(taskDrugs, transaction) {
         return sqlTransaction(async t => {
-            await sqlDelete(dbTaskDrugs, transaction)`WHERE ${dbTaskDrugs.taskId} = ${this.id}`
+            await sqlDelete(dbTaskDrugs, t)`WHERE ${dbTaskDrugs.taskId} = ${this.id}`()
 
-            for (const { drugId, amount } of drugs)
+            // todo this should be a bulk insert
+            for (const { drugId, amount } of taskDrugs)
                 await dbTaskDrugs.add({ taskId: this.id, drugId, amount }, t)
         }, transaction)
     }
 
     async reschedule() {
-        const newTask = await super.reschedule()
-        await sqlCopy(dbTaskDrugs, { taskId: newTask.id })`WHERE ${dbTaskDrugs.taskId} = ${this.id}`
+        const rescheduled = await super.reschedule()
+        await sqlCopy(dbTaskDrugs, { taskId: rescheduled.id })`WHERE ${dbTaskDrugs.taskId} = ${this.id}`()
 
-        return newTask
+        return rescheduled
     }
 }

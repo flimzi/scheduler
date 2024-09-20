@@ -2,8 +2,8 @@ import { EventStates, TaskTypes } from "../interface/definitions.js";
 import Event from "../models/Event.js";
 import dbEvents from "../schema/Events.js";
 import { getEvents } from "../schema/functions.js";
-import criticalHandler from "../util/criticalHandler.js";
-import { sqlSelect } from "../util/sql.js";
+import { sqlSelect } from "../sql/helpers.js";
+import { DEBUG, formatIntervalFromMilliseconds } from "../util/helpers.js";
 import Service from "./Service.js";
 
 export default class PollingTaskService extends Service {
@@ -38,16 +38,31 @@ export default class PollingTaskService extends Service {
     }
 
     async startTasks() {
-        for (const { id, end_date } of await this.getTaskQueue()) {
-            await dbEvents.updateColumnId({ id }, dbEvents.state, EventStates.Ongoing)
+        for (const task of await this.getTaskQueue()) {
+            await dbEvents.updateColumnId(task, dbEvents.state, EventStates.Ongoing)
+            const now = new Date()
+            const delay = now - task.start_date
+            const remaining = task.end_date - now
+
+            if (DEBUG) {
+                console.log('----- TASK -----')
+                console.log('started task', task, `(${task.id})`)
+                console.log(`starts at ${task.start_date.toLocaleString()}; delayed by ${formatIntervalFromMilliseconds(delay)}`)
+                console.log(`ends in ${formatIntervalFromMilliseconds(remaining)}`)
+            }
             
             setTimeout(
-                async () => this.closeTask(await Event.getId(id)), 
-                Math.max(0, end_date - new Date())
+                async () => this.closeTask(await Event.getId(task.id)), 
+                Math.max(0, remaining)
             )
         }
     }
 
+    // also maybe should repair tasks that have been closed but not yet rescheduled
+    // also all of this should be done using sql but there would need to be triggers set up to log activity into another table
+    // and user updates would then be sent out based on records in that table
+    // but there cant be any triggers in the database now because they cannot be used along with OUTPUT
+    // so it would need to be changed to returning query results using an intermediate temporary table kinda like sqlCopy
     async repairTasks() {
         for (const task of await this.getExpiredTasks())
             this.closeTask(Event.from(task))
@@ -55,8 +70,19 @@ export default class PollingTaskService extends Service {
 
     async closeTask(task) {
         if (task.state !== EventStates.Completed)
-            dbEvents.updateColumnId(task, dbEvents.state, EventStates.Missed)
+            await dbEvents.updateColumnId(task, dbEvents.state, EventStates.Missed)
 
-        task.reschedule()
+        const rescheduled = await task.reschedule()
+
+        if (DEBUG) {
+            console.log('----- TASK -----')
+            console.log('closed task', task, `(${task.id})`)
+            console.log(`ended at ${task.end_date.toLocaleString()}; now is ${new Date().toLocaleString()}`)
+
+            if (rescheduled) {
+                console.log('rescheduled into', rescheduled, `(${rescheduled.id})`)
+                console.log(`starts at ${rescheduled.start_date.toLocaleString()}`)
+            }
+        }
     }
 }

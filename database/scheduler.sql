@@ -54,8 +54,9 @@ CREATE TABLE [drugs] (
 	[userId] int NOT NULL,
 	[category] int NOT NULL,
 	[name] nvarchar(250) NOT NULL,
-	[info] nvarchar(4000) NOT NULL,
-	[unit] int NOT NULL
+	[info] nvarchar(4000),
+	[unit] int NOT NULL,
+	[portion] float
 );
 
 CREATE TABLE [task_drugs] (

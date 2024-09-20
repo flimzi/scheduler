@@ -36,6 +36,7 @@ export class ApiRoutes {
     static get confirmFCM() { return this.api + FCMRoutes.confirm }
 
     static drugs = userId => this.api + DrugRoutes.drugs(userId)
+    static drug = (userId, drugId) => this.api + DrugRoutes.drug(userId, drugId)
 }
 
 export default router

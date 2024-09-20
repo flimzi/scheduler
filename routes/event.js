@@ -37,7 +37,7 @@ router.post(EventRoutes.events(), related(false, false, RelationshipTypes.Superi
 const postEvents = (accessToken, userId, event) => new HttpRequest(ApiRoutes.events(userId)).bearer(accessToken).json(event).post()
 
 router.get(EventRoutes.event(), related(false, false, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
-    const event = await dbEvents.getId(req.params.eventId)
+    const event = await Event.getId(req.params.eventId)
     return event ? res.send(event) : res.send(HttpStatus.NotFound)
 }))
 

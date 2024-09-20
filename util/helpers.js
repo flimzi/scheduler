@@ -1,5 +1,7 @@
 import check from "check-types"
 
+export const DEBUG = !!process.env.DEBUG
+
 export function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
@@ -57,4 +59,18 @@ export const setBearer = token => 'Bearer ' + token
 export function stringifyValues(obj, maxDepth = 0) {
     // return Object.entries(obj).reduce((acc, [key, val]) => { acc[key] = val.toString(); return acc }, {})
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, typeof v === 'object' && maxDepth ? stringify(v, maxDepth - 1) : v.toString()]))
+}
+
+export function formatIntervalFromMilliseconds(ms) {
+    const totalSeconds = Math.floor(ms / 1000)
+    const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0')
+    const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0')
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0')
+    const milliseconds = ms.toString().padStart(3, '0')
+
+    return `${hours}:${minutes}:${seconds}:${milliseconds}`
+}
+
+export function formatIntervalFromSeconds(totalSeconds) {
+    return formatIntervalFromMilliseconds(totalSeconds * 1000)
 }

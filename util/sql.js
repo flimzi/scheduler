@@ -86,7 +86,7 @@ mssql.Request.prototype.logResult = function(result) {
 }
 
 mssql.Request.prototype.logError = function(error) {
-    console.error(e)
+    console.error(error)
     this.transaction && console.log('Transaction ' + this.transaction.transactionId, this.transaction)
     console.error('query: ' + this.getFullCommand())
 }

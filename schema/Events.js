@@ -1,7 +1,7 @@
 import { EventStates, TableEventTypes, TaskTypes } from "../interface/definitions.js"
 import { sqlSelect, sqlUpdate } from "../util/sql.js"
 import { DbColumn, DbTable } from "./DbObject.js"
-import { getEvents, substring } from "./functions.js"
+import { getEvents } from "./functions.js"
 
 class Events extends DbTable {
     constructor() {

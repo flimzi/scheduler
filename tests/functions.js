@@ -7,13 +7,14 @@ import Client from "./Client.mjs"
 import { assert } from "../util/helpers.js"
 
 export async function userScenario1() {
-    const primary = await Client.create(Roles.Primary)
-    const secondary = await primary.createChild(Roles.Secondary)
+    const primary = await Client.createPrimary()
+    const secondary = await primary.createSecondaryChild()
     const task = await primary.addTaskFor(secondary, Task.everySeconds(10, 5))
 
     task.info = faker.company.catchPhrase()
     await eventActions.putEvent(primary.accessToken, secondary.id, task.id, task).then(r => assert(r.ok))
     await primary.addDrugTaskFor(secondary)
+    console.log(await secondary.getDrugs())
 
     await new Promise(r => setTimeout(r, 2500))
     console.log(UserMessageService.unconfirmed)

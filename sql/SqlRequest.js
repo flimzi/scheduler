@@ -49,18 +49,24 @@ export class SqlRequest extends mssql.Request {
     }
 
     logError(command) {
-        console.error('----- SQL -----')
+        console.error('----- SQL ERROR -----')
+        this.logTrace()
         console.error(this.reveal(command))
-        console.error(e)
         console.log(this.transaction?.unwind() ?? [])
     }
 
     logResult(command, result) {
         console.log('----- SQL -----')
+        this.logTrace()
         console.log(this.reveal(command))
         console.log(result)
     }
- 
+
+    logTrace(removeTop = 2) {
+        const trace = new Error().stack.split('\n').slice(removeTop + 1).join('\n')
+        console.log(trace)
+    }
+    
     async *stream() {
 
     }

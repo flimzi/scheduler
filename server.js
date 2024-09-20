@@ -24,7 +24,7 @@ httpServer.listen(port, async () => {
     //     await new Promise(r => setTimeout(r, 250))
     // }
 
-    // userScenario1()
+    userScenario1()
 
     // let x = await sqlSelect(dbUsers, dbUsers.first_name, 10)(r => r[0])
     // let y = await sqlCopy(dbUsers, { email: null })`WHERE ${dbUsers.id} = ${16}`(r => console.log(r))
