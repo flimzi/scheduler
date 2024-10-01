@@ -3,9 +3,11 @@ import sql, { SqlBuilder } from "./SqlBuilder.js"
 
 export const first = recordset => recordset[0]
 export const any = recordset => recordset.any()
-export const get = column => recordset => first(recordset)[column]
+export const get = column => recordset => first(recordset)?.[column]
 
 export async function sqlInsert(dbTable, obj) {
+    Object.deleteUndefinedProperties(obj)
+
     return sql`
         INSERT INTO ${dbTable}
         (${new DbObject(Object.keys(obj).join())})
@@ -36,6 +38,7 @@ export function sqlDelete(dbTable) {
 }
 
 export function sqlUpdate(dbTable, toChange) {
+    Object.deleteUndefinedProperties(toChange)
     return sql`UPDATE ${dbTable} SET ${toChange} OUTPUT DELETED.*`
 }
 

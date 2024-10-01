@@ -56,6 +56,6 @@ export default class FirebaseCloudMessage {
         const response = await this.send(token)
         
         if (response.ok)
-            return response.json().then(r => r.name.split('/').at(-1))
+            return response.json().then(r => r  .split('/').at(-1))
     }
 }

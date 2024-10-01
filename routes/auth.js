@@ -35,7 +35,7 @@ router.post(AuthRoutes.verify, asyncHandler(async (req, res) => {
     res.send()
 }))
 
-const verify = token => new HttpRequest(ApiRoutes.verify).text(token).post().post()
+const verify = token => new HttpRequest(ApiRoutes.verify).text(token).post()
 
 export const authActions = { login, logout, verify }
 export default router

@@ -1,5 +1,6 @@
 import User from '../models/User.js'
-import { sql, sqlExists, sqlFirst } from '../util/sql.js'
+import sql from '../sql/SqlBuilder.js'
+import { sqlExists, sqlFirst } from '../sql/helpers.js'
 import { DbTable, DbColumn } from './DbObject.js'
 
 class Users extends DbTable {
@@ -31,24 +32,24 @@ class Users extends DbTable {
         if (email === undefined)
             return undefined
 
-        return sqlFirst(this)`WHERE ${this.email} = ${email}`.convert(User.getType)
+        return sqlFirst(this)`WHERE ${this.email} = ${email}`().convert(User.getType)
     }
 
     async getByVerificationToken(token) {
         if (token === undefined)
             return undefined
 
-        return sqlFirst(this)`WHERE ${this.verification_token} = ${token}`.convert(User.getType)
+        return sqlFirst(this)`WHERE ${this.verification_token} = ${token}`().convert(User.getType)
     }
 
     async emailExists(email) {
-        return sqlExists(this)`WHERE ${this.email} = ${email}`
+        return sqlExists(this)`WHERE ${this.email} = ${email}`()
     }
 
     async deleteId({ id }, transaction) {
         // this is a workaround using a trigger procedure but ideally the deleted records would be emitted (using function)
         // also im not sure how to use a transaction here
-        return sql`EXEC DeleteUser @UserId = ${id}`
+        return sql`EXEC DeleteUser @UserId = ${id}`()
     }
 }
 

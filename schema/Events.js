@@ -1,5 +1,5 @@
 import { EventStates, TableEventTypes, TaskTypes } from "../interface/definitions.js"
-import { sqlSelect, sqlUpdate } from "../util/sql.js"
+import { sqlSelect, sqlUpdate } from "../sql/helpers.js"
 import { DbColumn, DbTable } from "./DbObject.js"
 import { getEvents } from "./functions.js"
 
@@ -9,8 +9,7 @@ class Events extends DbTable {
         
         this.on(
             TableEventTypes.Update, 
-            ({ deleted }) => 
-                sqlUpdate(dbEvents, { [dbEvents.modified_at.dbName]: new Date() })`WHERE ${dbEvents.id} = ${deleted.id}`
+            ({ deleted }) => sqlUpdate(dbEvents, { [dbEvents.modified_at.dbName]: new Date() })`WHERE ${dbEvents.id} = ${deleted.id}`()
         )
     }
 
@@ -32,7 +31,7 @@ class Events extends DbTable {
     }
 
     async query({ giverId, receiverId, type, state, startBefore, startAfter }) {
-        return sqlSelect(getEvents({ giverId, receiverId, type, state, startBefore, startAfter }))`ORDER BY ${this.start_date}`
+        return sqlSelect(getEvents({ giverId, receiverId, type, state, startBefore, startAfter }))`ORDER BY ${this.start_date}`()
     }
 
     async getUpcomingTasks({ giverId, receiverId, type, startBefore, startAfter }) {

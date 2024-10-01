@@ -40,11 +40,11 @@ export default class Model {
     }
 
     async getUpdateModel() {
-        return this.getInsertModel()
+        return this.clone()
     }
 
     async add(transaction) {
-        return this.getTable()?.add(await this.getUpdateModel(), transaction).cast(this.constructor)
+        return this.getTable()?.add(await this.getInsertModel(), transaction).cast(this.constructor)
     }
 
     async delete(transaction) {
@@ -53,6 +53,10 @@ export default class Model {
 
     async update(updates, transaction) {
         return this.getTable()?.updateId(this, await updates.cast(this.constructor).getUpdateModel(), transaction)
+    }
+
+    async helpUpdate(updates, transaction) {
+        return this.update(Object.diff(this, updates), transaction)
     }
 
     async updateColumn(dbColumn, value, transaction) {

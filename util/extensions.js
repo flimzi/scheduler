@@ -1,10 +1,17 @@
 import { IncomingMessage } from 'http'
+import { Response } from 'node-fetch'
 
 Object.deleteUndefinedProperties = function(obj) {
     for (const key in obj)
         if (obj[key] === undefined)
             delete obj[key]
 }
+
+Array.intersect = function(arr1, arr2) {
+    return arr1.filter(v => arr2.includes(v))
+}
+
+Object.diff = (oldObj, newObj) => Object.fromEntries(Object.entries(newObj).filter(([k, v]) => !(k in oldObj) || v !== oldObj[k]))
 
 Object.propertyEquality = function(obj, other) {
     return Object.keys(obj).every(key => other.hasOwnProperty(key) && obj[key] === other[key])
@@ -75,4 +82,11 @@ Date.prototype.addSeconds = function(seconds) {
 
 IncomingMessage.prototype.baseUrl = function(route = '') {
     return `${this.protocol}://${this.get('host')}` + route
+}
+
+Response.prototype.assert = function() {
+    if (!this.ok)
+        throw new Error(`unsuccessful ${this.status}`)
+
+    return this
 }

@@ -1,9 +1,8 @@
 import mssql from 'mssql'
 import pool from '../config/db.js'
 import DbObject, { DbFunction } from '../schema/DbObject.js'
-import { createRequest, sqlExists } from '../util/sql.js'
 import { SqlTransaction } from './SqlTransaction.js'
-import sqlRequest, { SqlRequest } from './SqlRequest.js'
+import sqlRequest from './SqlRequest.js'
 
 export class SqlBuilder {
     static NULL = 'NULL'

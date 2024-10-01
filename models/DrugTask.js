@@ -1,8 +1,5 @@
-import check from 'check-types';
 import { TaskTypes } from "../interface/definitions.js";
 import dbTaskDrugs from '../schema/TaskDrugs.js';
-import { ArgumentError } from '../util/errors.js';
-// import { sqlCopy, sqlDelete, sqlTransaction, sqlTransactionResult } from '../util/sql.js';
 import sqlTransaction from '../sql/SqlTransaction.js';
 import { sqlCopy, sqlDelete } from '../sql/helpers.js';
 import { sqlSelect } from '../sql/helpers.js';
@@ -31,11 +28,15 @@ export default class DrugTask extends Task {
         }, transaction)
     }
 
-    async getUpdateModel() {
+    async getInsertModel() {
         const model = await super.getUpdateModel()
         delete model.taskDrugs
 
         return model
+    }
+
+    async getUpdateModel() {
+        return this.getInsertModel()
     }
 
     async getDownloadModel() {

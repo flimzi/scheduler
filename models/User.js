@@ -9,12 +9,12 @@ import { getEvents, getParents, getChildren } from '../schema/functions.js'
 import dbRelationships from '../schema/Relationships.js'
 import dbUsers from '../schema/Users.js'
 import { ArgumentError } from '../util/errors.js'
-import { sql, sqlInsert, sqlSelect } from '../util/sql.js'
+import sql from '../sql/SqlBuilder.js'
+import { sqlInsert, sqlSelect } from '../sql/helpers.js'
 import Model from './Model.js'
 
 export default class User extends Model {
     constructor({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token }) {
-        // todo convert createdat to js datetime
         super({ id, role, created_at, email, password, first_name, last_name, gender, birth_date, phone_number, verification_token, verified, height_cm, weight_kg, fcm_token })
     }
 
@@ -49,7 +49,7 @@ export default class User extends Model {
 
         const user = await dbUsers.getByEmail(email)
 
-        if (!user?.verified || !await bcrypt.compare(password, user.password))
+        if (!await bcrypt.compare(password, user.password))
             return
     
         return user.generateAccessToken()
@@ -93,7 +93,7 @@ export default class User extends Model {
         if (user.verified)
             return true
 
-        await sqlUpdate(dbUsers, { [dbUsers.verified.dbName]: 1 })`WHERE ${dbUsers.verification_token} = ${token}`
+        await sqlUpdate(dbUsers, { [dbUsers.verified.dbName]: 1 })`WHERE ${dbUsers.verification_token} = ${token}`()
         return true
     }
 
@@ -155,7 +155,7 @@ export default class User extends Model {
     }
 
     async getChildren(...relationshipTypes) {
-        return sql`SELECT ${dbUsers.minInfo()} FROM ${getChildren(this.id, relationshipTypes)}`
+        return sql`SELECT ${dbUsers.minInfo()} FROM ${getChildren(this.id, relationshipTypes)}`()
     }
 
     async addParent(parent, relationshipType, transaction) {
@@ -178,11 +178,11 @@ export default class User extends Model {
     }
 
     async getReceivedEvents({ giverId, type, state }) {
-        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, state})}`
+        return sql`SELECT * FROM ${getEvents({ receiverId: this.id, giverId, type, state})}`()
     }
 
     async getGivenEvents({ receiverId, type, state }) {
-        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, state })}`
+        return sql`SELECT * FROM ${getEvents({ giverId: this.id, receiverId, type, state })}`()
     }
 
     async addEventFor(receiver, event) {

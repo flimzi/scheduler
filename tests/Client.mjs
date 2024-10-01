@@ -10,7 +10,6 @@ import { eventActions } from "../routes/event.js"
 import { fcmActions } from "../routes/fcm.js"
 import { userActions } from '../routes/user.js'
 import UserMessageService from "../services/UserMessageService.js"
-import { assert } from "../util/helpers.js"
 
 export default class Client extends User {
     parents = {}
@@ -19,11 +18,7 @@ export default class Client extends User {
     
     static async create(role, parent) {
         const user = User.getType({ role }).fake()
-
-        user.id = await userActions.postUsers(parent?.accessToken, user).then(r => {
-            assert(r.ok)
-            return r.json()
-        })
+        user.id = await userActions.postUsers(parent?.accessToken, user).then(r => r.assert().json())
 
         const client = user.cast(Client)
         client.owner = parent
@@ -36,28 +31,23 @@ export default class Client extends User {
     }
 
     async login() {
-        this.accessToken = await authActions.login(this).then(r => {
-            assert(r.ok)
-            return r.text()
-        })
+        this.accessToken = await authActions.login(this).then(r => r.assert().text())
 
         this.updateToken()
         return this
     }
 
     async updateToken() {
-        return fcmActions.putToken(this.accessToken, process.env.FCM_DEFAULT).then(r => assert(r.ok))
+        return fcmActions.putToken(this.accessToken, process.env.FCM_DEFAULT).then(r => r.assert())
     }
 
     async logout() {
-        await authActions.logout(this.accessToken).then(r => assert(r.ok))
+        await authActions.logout(this.accessToken).then(r => r.assert())
     }
 
     async createChild(role) {
         const client = await Client.create(role, this)
-        const tokenResponse = await userActions.getToken(this.accessToken, client.id)
-        assert(tokenResponse.ok)
-        client.accessToken = await tokenResponse.text()
+        client.accessToken = await userActions.getToken(this.accessToken, client.id).then(r => r.assert().text())
         this.children[client.id] = client
         client.updateToken()
         return client
@@ -68,20 +58,14 @@ export default class Client extends User {
     }
 
     async addChild(client, relationshipType) {
-        await relatedActions.postParents(this.accessToken, client.id, client.accessToken, relationshipType).then(r => assert(r.ok))
+        await relatedActions.postParents(this.accessToken, client.id, client.accessToken, relationshipType).then(r => r.assert())
         client.parents[this.id] = this
         this.children.push(client)
     }
 
     async addEventFor(client, event) {
-        event.id = await eventActions.postEvents(this.accessToken, client.id, event).then(r => {
-            assert(r.ok)
-            return r.json()
-        })
-
-        const response = await eventActions.getEvent(this.accessToken, client.id, event.id)
-        assert(response.ok)
-        return response.json()
+        event.id = await eventActions.postEvents(this.accessToken, client.id, event).then(r => r.assert().json())
+        return eventActions.getEvent(this.accessToken, client.id, event.id).then(r => r.assert().json())
     }
 
     async addTaskFor(client, task) {
@@ -92,9 +76,7 @@ export default class Client extends User {
     }
 
     async addDrugFor(client, drug) {
-        return drugActions.postDrugs(this.accessToken, client.id, drug)
-            .then(r => assert(r.ok) && r)
-            .then(r => r.json())
+        return drugActions.postDrugs(this.accessToken, client.id, drug).then(r => r.assert().json())
     }
 
     async addDrugTaskFor(client, drugTask) {
@@ -109,7 +91,7 @@ export default class Client extends User {
     }
 
     async getDrugs(accessToken = this.accessToken, { categories, name, lastId } = {}) {
-        return drugActions.getDrugs(accessToken, this.id, { categories, name, lastId }).then(r => r.json())
+        return drugActions.getDrugs(accessToken, this.id, { categories, name, lastId }).then(r => r.assert().json())
     }
 
     processFCM(serverMessage) {

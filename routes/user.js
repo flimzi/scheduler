@@ -2,10 +2,10 @@ import express from 'express'
 import QRCode from 'qrcode'
 import { RelationshipTypes } from '../interface/definitions.js'
 import { asyncHandler } from "../middleware/asyncHandler.js"
-import { currentUserPlaceholder, getCurrentUser, related, self } from '../middleware/auth.js'
+import { currentUserPlaceholder, getCurrentUser, related } from '../middleware/auth.js'
 import User from '../models/User.js'
 import { HttpRequest, HttpStatus } from '../util/http.js'
-import { sqlTransaction } from '../util/sql.js'
+import sqlTransaction from '../sql/SqlTransaction.js'
 import { ApiRoutes } from './api.js'
 const router = express.Router()
 
@@ -19,7 +19,7 @@ export class UserRoutes {
 }
 
 router.post(UserRoutes.users, getCurrentUser, asyncHandler(async (req, res) => {
-    const { result } = await sqlTransaction(async t => {
+    const result = await sqlTransaction(async t => {
         const targetUser = await User.from(req.body).add(t)
         await targetUser.addParent(req.user, RelationshipTypes.Owner, t)
         
@@ -47,10 +47,17 @@ router.get(UserRoutes.qr(), related(false, false, RelationshipTypes.Owner), asyn
 const getQr = (accessToken, userId = currentUserPlaceholder) => new HttpRequest(ApiRoutes.qr(userId)).bearer(accessToken).fetch()
 
 router.get(UserRoutes.user(), related(true, true, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
-    res.json(req.targetUser.getInfo())
+    res.json(req.targetUser.getInfo()) // todo should be getDownloadModel
 }))
 
 const getUser = (accessToken, userId = currentUserPlaceholder) => new HttpRequest(ApiRoutes.user(userId)).bearer(accessToken).fetch()
+
+router.put(UserRoutes.user(), related(true, true, RelationshipTypes.Superior), asyncHandler(async (req, res) => {
+    await req.targetUser.helpUpdate(req.body)
+    res.send()
+}))
+
+const putUser = (accessToken, userId = currentUserPlaceholder, user) => new HttpRequest(ApiRoutes.user(userId)).bearer(accessToken).json(user).put()
 
 router.delete(UserRoutes.user(), related(true, false, RelationshipTypes.Owner), asyncHandler(async (req, res) => {
     await req.targetUser.delete()
@@ -66,5 +73,5 @@ router.get(UserRoutes.logoutAll(), related(true, false, RelationshipTypes.Owner)
 
 const logoutAll = (accessToken, userId = currentUserPlaceholder) => new HttpRequest(ApiRoutes.logoutAll(userId)).bearer(accessToken).fetch()
 
-export const userActions = { postUsers, getToken, getUser, deleteUser, logoutAll }
+export const userActions = { postUsers, getToken, getUser, putUser, deleteUser, logoutAll }
 export default router

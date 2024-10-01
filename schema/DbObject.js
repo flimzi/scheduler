@@ -1,6 +1,5 @@
 import { EventEmitter } from "events"
 import { TableEventTypes } from "../interface/definitions.js"
-// import { sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../util/sql.js"
 import { first, sqlDelete, sqlFirst, sqlInsert, sqlUpdate } from "../sql/helpers.js"
 
 export default class DbObject {

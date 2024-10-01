@@ -43,10 +43,15 @@ router.get(EventRoutes.event(), related(false, false, RelationshipTypes.Superior
 
 const getEvent = (accessToken, userId, eventId) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).fetch()
 
-router.put(EventRoutes.event(), authenticate, getModel(Event, Parameters.eventId, ({ content, user }) => content.giver_id === user.id), asyncHandler(async (req, res) => {
-    await req.content.update(req.body)
-    res.send()
-}))
+router.put(
+    EventRoutes.event(), 
+    authenticate, 
+    getModel(Event, Parameters.eventId, ({ content, user }) => content.giver_id === user.id), 
+    asyncHandler(async (req, res) => {
+        await req.content.update(req.body)
+        res.send()
+    })
+)
 
 const putEvent = (accessToken, userId, eventId, newEvent) => new HttpRequest(ApiRoutes.event(userId, eventId)).bearer(accessToken).json(newEvent).put()
 

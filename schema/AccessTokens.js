@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { DbTable, DbColumn } from "./DbObject.js";
-import { sqlDelete, sqlFirst } from '../util/sql.js';
+import { sqlDelete, sqlFirst } from '../sql/helpers.js';
 
 class AccessTokens extends DbTable {
     constructor() {
@@ -12,15 +12,15 @@ class AccessTokens extends DbTable {
     hash = new DbColumn('hash')
 
     get(userId, hash) {
-        return sqlFirst(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
+        return sqlFirst(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`()
     }
 
     delete(userId, hash) {
-        return sqlDelete(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`
+        return sqlDelete(this)`WHERE ${this.user_id} = ${userId} AND ${this.hash} = ${hash}`()
     }
 
     deleteForUser({ id }) {
-        return sqlDelete(this)`WHERE ${this.user_id} = ${id}`
+        return sqlDelete(this)`WHERE ${this.user_id} = ${id}`()
     }
 }
 

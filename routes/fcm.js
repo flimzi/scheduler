@@ -7,7 +7,7 @@ import { validate } from '../middleware/validate.js'
 import dbUsers from '../schema/Users.js'
 import { HttpRequest, HttpStatus } from '../util/http.js'
 import { ApiRoutes } from './api.js'
-import { sqlExists } from '../util/sql.js'
+import { sqlExists } from '../sql/helpers.js'
 import UserMessageService from '../services/UserMessageService.js'
 const router = express.Router()
 
@@ -33,7 +33,7 @@ router.post(FCMRoutes.confirm, validate(body().isObject()), asyncHandler(async (
 const confirm = (accessToken, messageObject) => new HttpRequest(ApiRoutes.confirmFCM).bearer(accessToken).json(messageObject).post()
 
 router.put(FCMRoutes.token, validate(body().notEmpty()), authenticate, asyncHandler(async (req, res) => {
-    if (!process.env.DEBUG && await sqlExists(dbUsers)`WHERE ${dbUsers.fcm_token} = ${req.body}`)
+    if (!process.env.DEBUG && await sqlExists(dbUsers)`WHERE ${dbUsers.fcm_token} = ${req.body}`())
         return res.send(HttpStatus.Conflict)
 
     await req.user.updateColumn(dbUsers.fcm_token, req.body)

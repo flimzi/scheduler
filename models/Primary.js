@@ -15,24 +15,31 @@ export default class Primary extends User {
         return carer
     }
 
-    getInfo() {
-        return super.getInfo()
-    }
+    // getInfo() {
+    //     return super.getInfo()
+    // }
 
     async getUpdateModel() {
-        // throwing isnt ideal but it really streamlines the workflow in this case
-        if (!isValidEmail(this.email))
-            throw new ArgumentError(`${this.email} is not a valid email`)
-        
-        if (!process.env.DEBUG && !isStrongPassword(model.password))
+        if (this.email !== undefined) {
+            if (!isValidEmail(this.email))
+                throw new ArgumentError(`${this.email} is not a valid email`)
+
+            if (await dbUsers.emailExists(this.email))
+                throw new ArgumentError(`user ${this.email} already exists`, HttpStatus.Conflict)
+        }
+
+        if (this.password !== undefined && !process.env.DEBUG && !isStrongPassword(this.password))
             throw new ArgumentError(`${this.password} is not a strong password`)
 
-        if (await dbUsers.emailExists(this.email))
-            throw new ArgumentError(`user ${this.email} already exists`, HttpStatus.Conflict)
+        return super.getUpdateModel()
+    }
 
-        const model = await super.getUpdateModel()
+    async getInsertModel() {
+        if (!this.email || !this.password)
+            throw new ArgumentError()
+
+        const model = await this.getUpdateModel()
         model.verified = !!process.env.DEBUG
-        // model.role = Roles.Carer
 
         return model
     }
